@@ -99,10 +99,14 @@ function generateLevel (w, h) {
 }
 
 function isSolid (x, z) {
-  if (x <= 0 || z <= 0 || x >= map.width || z >= map.height) {
+  x /= 2
+  z /= 2
+  z += 0.5
+  x += 0.5
+  if (x <= 0 || z <= 0 || x >= map.width || z >= map.depth) {
     return true
   }
-  return !!map.get(Math.floor(x), Math.floor(z))
+  return !!map.get(Math.floor(x), 1, Math.floor(z))
 }
 
 function updatePhysics (world) {
@@ -114,12 +118,10 @@ function updatePhysics (world) {
     var tx = e.physics.pos.x + e.physics.vel.x
     if (isSolid(tx, e.physics.pos.z)) {
       e.physics.vel.x = 0
-      console.log('x hit')
     }
     var tz = e.physics.pos.z + e.physics.vel.z
     if (isSolid(e.physics.pos.x, tz)) {
       e.physics.vel.z = 0
-      console.log('z hit')
     }
 
     // newtonian physics
