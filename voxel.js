@@ -1,4 +1,5 @@
 var mat4 = require('gl-mat4')
+var vec3 = require('gl-vec3')
 
 module.exports = Voxel
 
@@ -147,6 +148,27 @@ Voxel.prototype.get = function (x, y, z) {
   return this.map[x][y][z]
 }
 
+Voxel.prototype.lightBox = function (x, y, z, fn) {
+  // 6 sides
+  for (var i=0; i < 6; i++) {
+    var normal = sideToNormal(i)
+
+    // 4 vertices
+    for (var j=0; j < 4; j++) {
+      var offset = sideVertToPos(i, j)
+      var pos = vec3.fromValues(x + offset[0], y + offset[1], z + offset[2])
+
+      var res = fn(pos, normal)
+      if (res) {
+        // res[0] = Math.min(res[0], 1.0)
+        // res[1] = Math.min(res[1], 1.0)
+        // res[2] = Math.min(res[2], 1.0)
+        this.setColor(x, y, z, i, j, res)
+      }
+    }
+  }
+}
+
 Voxel.prototype.generateGeometry = function () {
   // map -> geometry
   for (var i=0; i < this.width; i++) {
@@ -258,4 +280,21 @@ Voxel.prototype.addBox = function (x, y, z) {
   }
 
   this.index += numSides * 4
+}
+
+function sideToNormal (side) {
+  switch (side) {
+    case 0: return vec3.fromValues( 0, 0, 1)
+    case 1: return vec3.fromValues( 0, 0,-1)
+    case 2: return vec3.fromValues( 0, 1, 1)
+    case 3: return vec3.fromValues( 0,-1, 1)
+    case 4: return vec3.fromValues(-1, 0, 1)
+    case 5: return vec3.fromValues( 1, 0, 1)
+  }
+}
+
+var lightVerts = boxVertices
+  .map(function (v) { return [v[0]/2, v[1]/2, v[2]/2] })
+function sideVertToPos (side, vert) {
+  return lightVerts[side * 4 + vert]
 }
