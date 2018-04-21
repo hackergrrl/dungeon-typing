@@ -6,6 +6,7 @@ var Voxel = require('./voxel')
 var dungeon = require('dungeon-generator')
 var Sky = require('./sky')
 var nano = require('nano-ecs')
+var vec3 = require('gl-vec3')
 
 var camera = {
   pos: [0, -2, -10],
@@ -16,6 +17,55 @@ var projection
 
 var world = nano()
 var map
+
+function lightBox (x, y, z, fn) {
+  // 6 sides
+  for (var i=0; i < 6; i++) {
+    var normal = sideToNormal(i)
+
+    // 4 vertices
+    for (var j=0; j < 4; j++) {
+      var offset = sideVertToPos(i, j)
+      var pos = vec3.fromValues(x + offset[0], y + offset[1], z + offset[2])
+
+      var res = fn(pos, normal)
+      res[0] = Math.min(res[0], 1.0)
+      res[1] = Math.min(res[1], 1.0)
+      res[2] = Math.min(res[2], 1.0)
+      map.setColor(x, y, z, i, j, res)
+    }
+  }
+}
+
+function sideToNormal (side) {
+  switch (side) {
+    case 0: return vec3.fromValues( 0, 0, 1)
+    case 1: return vec3.fromValues( 0, 0,-1)
+    case 2: return vec3.fromValues( 0, 1, 1)
+    case 3: return vec3.fromValues( 0,-1, 1)
+    case 4: return vec3.fromValues(-1, 0, 1)
+    case 5: return vec3.fromValues( 1, 0, 1)
+  }
+}
+
+var boxVertices = [
+  [ -1, +1, +1 ], [ +1, +1, +1 ], [ +1, -1, +1 ], [ -1, -1, +1 ],  // front
+  [ -1, +1, -1 ], [ +1, +1, -1 ], [ +1, -1, -1 ], [ -1, -1, -1 ],  // back
+  [ -1, +1, +1 ], [ -1, +1, -1 ], [ +1, +1, -1 ], [ +1, +1, +1 ],  // top
+  [ -1, -1, +1 ], [ -1, -1, -1 ], [ +1, -1, -1 ], [ +1, -1, +1 ],  // bottom
+  [ -1, -1, +1 ], [ -1, -1, -1 ], [ -1, +1, -1 ], [ -1, +1, +1 ],  // left
+  [ +1, -1, +1 ], [ +1, -1, -1 ], [ +1, +1, -1 ], [ +1, +1, +1 ],  // right
+].map(function (v) { return [v[0]/2, v[1]/2, v[2]/2] })
+function sideVertToPos (side, vert) {
+  return boxVertices[side * 4 + vert]
+}
+
+function pointLight (lpos, lightIntensity, vpos, normal) {
+  var out = vec3.create()
+  var dir = vec3.sub(out, vpos, lpos)
+  var dist = vec3.length(out)
+  return lightIntensity / (dist*dist)
+}
 
 // gravity-affected, bounding box vs tilemap, position
 function Physics () {
@@ -205,13 +255,16 @@ function run (assets) {
   map.generateGeometry()
 
   // faux lighting
+  var lightPos = vec3.fromValues(12, 3, 12)
+  var lightIntensity = 20
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
       for (var k=0; k < map.height; k++) {
-        map.setColor(i, k, j, 3, 0, [1.0, 0.0, 0.0])
-        map.setColor(i, k, j, 3, 1, [1.0, 0.0, 0.0])
-        map.setColor(i, k, j, 3, 2, [1.0, 0.0, 0.0])
-        map.setColor(i, k, j, 3, 3, [1.0, 0.0, 0.0])
+        var pos = { x: i, y: k, z: j }
+        lightBox(pos.x, pos.y, pos.z, function (pos, normal) {
+          var br = pointLight(lightPos, lightIntensity, pos, normal)
+          return [br, br, br]
+        })
       }
     }
   }
