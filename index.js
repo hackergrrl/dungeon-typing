@@ -22,7 +22,7 @@ function pointLight (lpos, lightIntensity, vpos, normal) {
   var out = vec3.create()
   var dir = vec3.sub(out, vpos, lpos)
   var dist = vec3.length(out)
-  return Math.min(2.0, Math.max(0, lightIntensity / (dist*dist) + 0.15))
+  return Math.min(2.0, Math.max(0, lightIntensity / (dist*dist)))
 }
 
 // gravity-affected, bounding box vs tilemap, position
@@ -212,17 +212,29 @@ function run (assets) {
 
   map.generateGeometry()
 
-  // faux lighting
-  var lightPos = vec3.fromValues(12, 3, 12)
-  var lightIntensity = 10
+  // default darkness
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
       for (var k=0; k < map.height; k++) {
-        var pos = { x: i, y: k, z: j }
-        map.lightBox(pos.x, pos.y, pos.z, function (pos, normal) {
-          var br = pointLight(lightPos, lightIntensity, pos, normal)
-          return [br * 226/255, br * 188/255, br * 134/255]
+        map.lightBoxSet(i, k, j, function (pos, normal) {
+          return [0.3, 0.3, 0.3]
         })
+      }
+    }
+  }
+
+  function updateLights (lights) {
+    for (var i=0; i < map.width; i++) {
+      for (var j=0; j < map.depth; j++) {
+        for (var k=0; k < map.height; k++) {
+          lights.forEach(function (light) {
+            var lightPos = vec3.fromValues(light.pos.x, light.pos.y, light.pos.z)
+            map.lightBoxAdd(i, k, j, function (pos, normal) {
+              var br = pointLight(lightPos, light.intensity, pos, normal)
+              return [br * 226/255, br * 188/255, br * 134/255]
+            })
+          })
+        }
       }
     }
   }
@@ -233,6 +245,21 @@ function run (assets) {
                         [0, 1, 0])
 
   var sky = Sky(regl)
+
+  console.time('light')
+  var lights = []
+  for (var i=0; i < 10; i++) {
+    lights.push({
+      pos: {
+        x: Math.random() * map.width,
+        y: 3,
+        z: Math.random() * map.depth
+      },
+      intensity: Math.random() * 5 + 4
+    })
+  }
+  updateLights(lights)
+  console.timeEnd('light')
 
   regl.frame(function (state) {
     accum += (new Date().getTime() - last)

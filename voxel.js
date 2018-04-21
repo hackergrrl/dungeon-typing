@@ -144,11 +144,20 @@ Voxel.prototype.setColor = function (x, y, z, side, vert, color) {
   }
 }
 
+Voxel.prototype.addColor = function (x, y, z, side, vert, color) {
+  var n = this.offsets[x][y][z][side * 4 + vert]
+  if (n) {
+    this.color[n][0] += color[0]
+    this.color[n][1] += color[1]
+    this.color[n][2] += color[2]
+  }
+}
+
 Voxel.prototype.get = function (x, y, z) {
   return this.map[x][y][z]
 }
 
-Voxel.prototype.lightBox = function (x, y, z, fn) {
+Voxel.prototype.lightBoxSet = function (x, y, z, fn) {
   // 6 sides
   for (var i=0; i < 6; i++) {
     var normal = sideToNormal(i)
@@ -157,14 +166,23 @@ Voxel.prototype.lightBox = function (x, y, z, fn) {
     for (var j=0; j < 4; j++) {
       var offset = sideVertToPos(i, j)
       var pos = vec3.fromValues(x + offset[0], y + offset[1], z + offset[2])
-
       var res = fn(pos, normal)
-      if (res) {
-        // res[0] = Math.min(res[0], 1.0)
-        // res[1] = Math.min(res[1], 1.0)
-        // res[2] = Math.min(res[2], 1.0)
-        this.setColor(x, y, z, i, j, res)
-      }
+      if (res) this.setColor(x, y, z, i, j, res)
+    }
+  }
+}
+
+Voxel.prototype.lightBoxAdd = function (x, y, z, fn) {
+  // 6 sides
+  for (var i=0; i < 6; i++) {
+    var normal = sideToNormal(i)
+
+    // 4 vertices
+    for (var j=0; j < 4; j++) {
+      var offset = sideVertToPos(i, j)
+      var pos = vec3.fromValues(x + offset[0], y + offset[1], z + offset[2])
+      var res = fn(pos, normal)
+      if (res) this.addColor(x, y, z, i, j, res)
     }
   }
 }
