@@ -105,6 +105,9 @@ function updatePhysics (world) {
     e.physics.pos.y += e.physics.vel.y
     e.physics.pos.z += e.physics.vel.z
 
+    e.physics.pos.x *= 0.94
+    e.physics.pos.z *= 0.94
+
     if (e.physics.pos.y <= 1 + e.physics.height/2) {
       e.physics.vel.y *= -0.5
       e.physics.pos.y = 1 + e.physics.height/2
