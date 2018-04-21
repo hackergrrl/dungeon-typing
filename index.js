@@ -248,16 +248,17 @@ function run (assets) {
 
   console.time('light')
   var lights = []
-  for (var i=0; i < 10; i++) {
+  dun.children.forEach(function (p) {
+    console.log(p)
     lights.push({
       pos: {
-        x: Math.random() * map.width,
+        x: (p.position[0] + p.room_size[0]/2) * 2,
         y: 3,
-        z: Math.random() * map.depth
+        z: (p.position[1] + p.room_size[1]/2) * 2
       },
       intensity: Math.random() * 5 + 4
     })
-  }
+  })
   updateLights(lights)
   console.timeEnd('light')
 
