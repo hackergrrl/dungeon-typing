@@ -260,6 +260,20 @@ function run (assets) {
 
   var chr = Billboard(regl)
 
+  function drawBillboard (x, y, z, texture) {
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, vec3.fromValues(x, y, z))
+    mat4.scale(model, model, vec3.fromValues(1.5, 1.5, 1.5))
+    var rot = -Math.atan2(-camera.pos[2] - x, -camera.pos[0] - z) + Math.PI/2
+    mat4.rotateY(model, model, rot)
+    chr({
+      model: model,
+      view: view,
+      texture: texture
+    })
+  }
+
   console.time('light')
   var lights = []
   dun.children.forEach(function (p) {
@@ -312,16 +326,6 @@ function run (assets) {
       view: view
     })
 
-    var model = mat4.create()
-    mat4.identity(model)
-    mat4.translate(model, model, vec3.fromValues(12, 2.5, 12))
-    mat4.scale(model, model, vec3.fromValues(1.5, 1.5, 1.5))
-    var rot = -Math.atan2(-camera.pos[2] - 12, -camera.pos[0] - 12) + Math.PI/2
-    mat4.rotateY(model, model, rot)
-    chr({
-      model: model,
-      view: view,
-      texture: assets.foe
-    })
+    drawBillboard(12, 2.5, 12, assets.foe)
   })
 }
