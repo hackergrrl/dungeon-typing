@@ -4,6 +4,7 @@ var key = require('key-pressed')
 var pointer = require('pointer-lock')(document.body)
 var Voxel = require('./voxel')
 var dungeon = require('dungeon-generator')
+var Sky = require('./sky')
 
 var camera = {
   pos: [0, -2, -10],
@@ -17,53 +18,6 @@ pointer.on('attain', function (mv) {
     camera.rot[0] += ev.dy * 0.005
     camera.rot[1] += ev.dx * 0.005
   })
-})
-
-var sky = regl({
-  frag: `
-    precision mediump float;
-
-    varying vec3 vPos;
-
-    void main () {
-      vec3 sky = vec3(0.0, 142.0/255.0, 1.0);
-      float intensity = 1.0 - (vPos.y * 0.002);
-      gl_FragColor = vec4(sky * intensity, 1.0);
-    }
-  `,
-
-  vert: `
-    precision mediump float;
-
-    uniform mat4 projection;
-    attribute vec3 pos;
-    varying vec3 vPos;
-
-    void main () {
-      gl_Position = projection * vec4(pos, 1.0);
-      vPos = pos;
-    }
-  `,
-
-  attributes: {
-    pos: [
-      [ -2000,+4000,-400 ],
-      [  2000,    0,-400 ],
-      [ -2000,-4000,-400 ]
-    ]
-  },
-
-  uniforms: {
-    projection: function (state) {
-      return mat4.perspective([],
-                       Math.PI / 3,
-                       state.viewportWidth / state.viewportHeight,
-                       0.01,
-                       1000)
-    },
-  },
-
-  count: 3
 })
 
 require('resl')({
@@ -139,6 +93,8 @@ function run (assets) {
                         [0, 0, -30],
                         [0, 0.0, 0],
                         [0, 1, 0])
+
+  var sky = Sky(regl)
 
   regl.frame(function (state) {
     accum += (new Date().getTime() - last)
