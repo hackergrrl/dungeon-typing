@@ -5,6 +5,7 @@ var pointer = require('pointer-lock')(document.body)
 var Voxel = require('./voxel')
 var dungeon = require('dungeon-generator')
 var Sky = require('./sky')
+var nano = require('nano-ecs')
 
 var camera = {
   pos: [0, -2, -10],
@@ -12,6 +13,34 @@ var camera = {
 }
 
 var projection
+
+var world = nano()
+
+// gravity-affected, bounding box vs tilemap, position
+function Physics () {
+  this.pos = {
+    x: 0,
+    y: 0,
+    z: 0
+  }
+  this.width = 8
+  this.length = 8
+  this.height = 8
+
+  this.vel = {
+    x: 0,
+    y: 0,
+    z: 0
+  }
+}
+
+function CameraController () {
+  this.rot = {
+    x: 0,
+    y: 0,
+    z: 0
+  }
+}
 
 pointer.on('attain', function (mv) {
   mv.on('data', function (ev) {
@@ -62,10 +91,32 @@ function generateLevel (w, h) {
   return dun
 }
 
+function updatePhysics (world) {
+  world.queryComponents([Physics]).forEach(function (e) {
+    e.physics.vel.y += 0.001
+
+    e.physics.pos.x += e.physics.vel.x
+    e.physics.pos.y += e.physics.vel.y
+    e.physics.pos.z += e.physics.vel.z
+  })
+}
+
+function updateCamera (world) {
+  world.queryComponents([CameraController]).forEach(function (e) {
+    camera.pos[0] = e.physics.pos.x
+    camera.pos[1] = e.physics.pos.y
+    camera.pos[2] = e.physics.pos.z
+  })
+}
+
 function run (assets) {
   var accum = 0
   var frames = 0
   var last = new Date().getTime()
+
+  var player = world.createEntity()
+  player.addComponent(Physics)
+  player.addComponent(CameraController)
 
   // alloc + config map
   var map = new Voxel(regl, 50, 10, 50, assets.atlas)
@@ -105,6 +156,9 @@ function run (assets) {
       accum = 0
     }
     last = new Date().getTime()
+
+    updatePhysics(world)
+    updateCamera(world)
 
     projection = mat4.perspective([],
                                   Math.PI / 3,
