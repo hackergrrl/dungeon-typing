@@ -54,13 +54,14 @@ function makeReglElement (regl) {
 
       varying vec2 vUV;
       varying vec3 vNormal;
+      varying vec3 vColor;
       uniform sampler2D texture;
 
       void main () {
         vec3 sun = normalize(vec3(-0.3, +0.5, 0.4));
         float br = clamp(dot(sun, vNormal) + 1.2, 0.0, 1.0);
 
-        vec4 tex = texture2D(texture, vUV);
+        vec3 tex = texture2D(texture, vUV).xyz * vColor;
         vec4 res = vec4(tex.x * br, tex.y * br, tex.z * br, 1.0);
         gl_FragColor = res;
       }
@@ -74,6 +75,7 @@ function makeReglElement (regl) {
       attribute vec3 pos;
       attribute vec2 uv;
       attribute vec3 normal;
+      attribute vec3 color;
 
       varying vec3 vColor;
       varying vec3 vNormal;
@@ -83,6 +85,7 @@ function makeReglElement (regl) {
         gl_Position = projection * view * vec4(pos, 1.0);
         vUV = uv;
         vNormal = normal;
+        vColor = color;
       }
     `,
 
@@ -91,7 +94,8 @@ function makeReglElement (regl) {
     attributes: {
       pos: regl.prop('positions'),
       uv: regl.prop('uvs'),
-      normal: regl.prop('normals')
+      normal: regl.prop('normals'),
+      color: regl.prop('colors')
     },
 
     uniforms: {
@@ -111,8 +115,11 @@ function Voxel (regl, width, height, depth, atlas) {
   this.position = []
   this.uv = []
   this.normal = []
+  this.color = []
   this.elements = []
   this.index = 0
+
+  this.offsets = allocMap(width, height, depth)
 
   this.width = width
   this.height = height
@@ -127,6 +134,13 @@ function Voxel (regl, width, height, depth, atlas) {
 
 Voxel.prototype.set = function (x, y, z, value) {
   this.map[x][y][z] = value
+}
+
+Voxel.prototype.setColor = function (x, y, z, side, vert, color) {
+  var n = this.offsets[x][y][z][side * 4 + vert]
+  if (n) {
+    this.color[n] = color
+  }
 }
 
 Voxel.prototype.get = function (x, y, z) {
@@ -152,6 +166,7 @@ Voxel.prototype.draw = function (opts) {
   opts.positions = this.position,
   opts.uvs = this.uv,
   opts.normals = this.normal
+  opts.colors = this.color
   this.drawCmd(opts)
 }
 
@@ -160,7 +175,7 @@ function allocMap (width, height, depth) {
   columns.forEach(function (_, n) {
     columns[n] = new Array(height).fill()
     columns[n].forEach(function (_, m) {
-      columns[n][m] = new Array(depth).fill()
+      columns[n][m] = new Array(depth).fill(0)
     })
   })
 
@@ -197,8 +212,15 @@ Voxel.prototype.addBox = function (x, y, z) {
 
   var skips = 0
 
-  // vertices, uv, normals
+  var tx = Math.floor(x/2)
+  var ty = Math.floor(y/2)
+  var tz = Math.floor(z/2)
+  this.offsets[tx][ty][tz] = new Array(6).fill(null)
+
+  // vertices, uv, normals, colors
   for (var i = 0; i < boxVertices.length; i++) {
+    this.offsets[tx][ty][tz][i] = null
+
     var side = Math.floor(i / 4)
     if (!visible[side]) {
       skips++
@@ -218,6 +240,10 @@ Voxel.prototype.addBox = function (x, y, z) {
 
     // normals
     this.normal.push([boxNormal[i][0], boxNormal[i][1], boxNormal[i][2]])
+
+    // colors
+    this.color.push([1,1,1])
+    this.offsets[tx][ty][tz][i] = this.color.length - 1
 
     // element
     if (i % 4 === 0) {

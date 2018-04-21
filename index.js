@@ -204,6 +204,18 @@ function run (assets) {
 
   map.generateGeometry()
 
+  // faux lighting
+  for (var i=0; i < map.width; i++) {
+    for (var j=0; j < map.depth; j++) {
+      for (var k=0; k < map.height; k++) {
+        map.setColor(i, k, j, 3, 0, [1.0, 0.0, 0.0])
+        map.setColor(i, k, j, 3, 1, [1.0, 0.0, 0.0])
+        map.setColor(i, k, j, 3, 2, [1.0, 0.0, 0.0])
+        map.setColor(i, k, j, 3, 3, [1.0, 0.0, 0.0])
+      }
+    }
+  }
+
   var view = mat4.lookAt([],
                         [0, 0, -30],
                         [0, 0.0, 0],
