@@ -221,7 +221,7 @@ function run (assets) {
         var pos = { x: i, y: k, z: j }
         map.lightBox(pos.x, pos.y, pos.z, function (pos, normal) {
           var br = pointLight(lightPos, lightIntensity, pos, normal)
-          return [br, br, br]
+          return [br * 226/255, br * 188/255, br * 134/255]
         })
       }
     }
