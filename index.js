@@ -15,6 +15,7 @@ var camera = {
 var projection
 
 var world = nano()
+var map
 
 // gravity-affected, bounding box vs tilemap, position
 function Physics () {
@@ -97,19 +98,42 @@ function generateLevel (w, h) {
   return dun
 }
 
+function isSolid (x, z) {
+  if (x <= 0 || z <= 0 || x >= map.width || z >= map.height) {
+    return true
+  }
+  return !!map.get(Math.floor(x), Math.floor(z))
+}
+
 function updatePhysics (world) {
   world.queryComponents([Physics]).forEach(function (e) {
+    // gravity
     e.physics.vel.y -= 0.006
 
+    // wall collisions; test x and z separately
+    var tx = e.physics.pos.x + e.physics.vel.x
+    if (isSolid(tx, e.physics.pos.z)) {
+      e.physics.vel.x = 0
+      console.log('x hit')
+    }
+    var tz = e.physics.pos.z + e.physics.vel.z
+    if (isSolid(e.physics.pos.x, tz)) {
+      e.physics.vel.z = 0
+      console.log('z hit')
+    }
+
+    // newtonian physics
     e.physics.pos.x += e.physics.vel.x
     e.physics.pos.y += e.physics.vel.y
     e.physics.pos.z += e.physics.vel.z
 
-    e.physics.pos.x *= 0.94
-    e.physics.pos.z *= 0.94
+    // ground friction
+    e.physics.vel.x *= 0.94
+    e.physics.vel.z *= 0.94
 
+    // ground collision
     if (e.physics.pos.y <= 1 + e.physics.height/2) {
-      e.physics.vel.y *= -0.5
+      e.physics.vel.y *= -0.3
       e.physics.pos.y = 1 + e.physics.height/2
     }
   })
@@ -150,7 +174,7 @@ function run (assets) {
   player.addComponent(CameraController)
 
   // alloc + config map
-  var map = new Voxel(regl, 50, 10, 50, assets.atlas)
+  map = new Voxel(regl, 50, 10, 50, assets.atlas)
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {

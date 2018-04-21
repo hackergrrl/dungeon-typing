@@ -129,6 +129,10 @@ Voxel.prototype.set = function (x, y, z, value) {
   this.map[x][y][z] = value
 }
 
+Voxel.prototype.get = function (x, y, z) {
+  return this.map[x][y][z]
+}
+
 Voxel.prototype.generateGeometry = function () {
   // map -> geometry
   for (var i=0; i < this.width; i++) {
