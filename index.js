@@ -23,9 +23,9 @@ function Physics () {
     y: 0,
     z: 0
   }
-  this.width = 8
-  this.length = 8
-  this.height = 8
+  this.width = 4
+  this.length = 4
+  this.height = 4
 
   this.vel = {
     x: 0,
@@ -93,19 +93,40 @@ function generateLevel (w, h) {
 
 function updatePhysics (world) {
   world.queryComponents([Physics]).forEach(function (e) {
-    e.physics.vel.y += 0.001
+    e.physics.vel.y -= 0.001
 
     e.physics.pos.x += e.physics.vel.x
     e.physics.pos.y += e.physics.vel.y
     e.physics.pos.z += e.physics.vel.z
+
+    if (e.physics.pos.y <= 1 + e.physics.height/2) {
+      e.physics.vel.y *= -0.5
+    }
   })
 }
 
 function updateCamera (world) {
   world.queryComponents([CameraController]).forEach(function (e) {
-    camera.pos[0] = e.physics.pos.x
-    camera.pos[1] = e.physics.pos.y
-    camera.pos[2] = e.physics.pos.z
+    camera.pos[0] = -e.physics.pos.x
+    camera.pos[1] = -e.physics.pos.y
+    camera.pos[2] = -e.physics.pos.z
+
+    if (key('W')) {
+      e.physics.vel.z -= Math.cos(camera.rot[1]) * 0.01
+      e.physics.vel.x += Math.sin(camera.rot[1]) * 0.01
+    }
+    if (key('S')) {
+      e.physics.vel.z += Math.cos(camera.rot[1]) * 0.01
+      e.physics.vel.x -= Math.sin(camera.rot[1]) * 0.01
+    }
+    if (key('D')) {
+      e.physics.vel.z -= Math.cos(camera.rot[1] + Math.PI/2) * 0.01
+      e.physics.vel.x += Math.sin(camera.rot[1] + Math.PI/2) * 0.01
+    }
+    if (key('A')) {
+      e.physics.vel.z -= Math.cos(camera.rot[1] - Math.PI/2) * 0.01
+      e.physics.vel.x += Math.sin(camera.rot[1] - Math.PI/2) * 0.01
+    }
   })
 }
 
@@ -119,14 +140,14 @@ function run (assets) {
   player.addComponent(CameraController)
 
   // alloc + config map
-  var map = new Voxel(regl, 50, 10, 50, assets.atlas)
+  var map = new Voxel(regl, 75, 10, 75, assets.atlas)
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
       for (var k=0; k < map.height; k++) {
-        if (k >= 3 && k <= 4) {
-          var x = Math.floor(i / 2)
-          var y = Math.floor(j / 2)
+        if (k >= 1 && k <= 2) {
+          var x = Math.floor(i / 3)
+          var y = Math.floor(j / 3)
           map.set(i, k, j, dun.walls.get([x, y]) ? 1 : 0)
         } else {
           map.set(i, k, j, 1)
@@ -135,10 +156,13 @@ function run (assets) {
     }
   }
 
-  map.generateGeometry()
+  var p = dun.children[Math.floor(Math.random() * dun.children.length)]
+  player.physics.pos.x = p.position[0] + p.size[0]/2
+  player.physics.pos.z = p.position[1] + p.size[1]/2
+  player.physics.pos.y = 4
+  console.log(p.position, p.size)
 
-  camera.pos[0] = -35 * 2
-  camera.pos[2] = -35 * 2
+  map.generateGeometry()
 
   var view = mat4.lookAt([],
                         [0, 0, -30],
@@ -171,25 +195,6 @@ function run (assets) {
     mat4.rotateY(view, view, camera.rot[1])
     mat4.rotateZ(view, view, camera.rot[2])
     mat4.translate(view, view, camera.pos)
-
-    if (key('W')) {
-      camera.pos[2] += Math.cos(camera.rot[1])
-      camera.pos[0] -= Math.sin(camera.rot[1])
-      camera.pos[1] += Math.sin(camera.rot[0])
-    }
-    if (key('S')) {
-      camera.pos[2] += Math.cos(camera.rot[1]) * -1
-      camera.pos[0] -= Math.sin(camera.rot[1]) * -1
-      camera.pos[1] += Math.sin(camera.rot[0]) * -1
-    }
-    if (key('D')) {
-      camera.pos[2] += Math.cos(camera.rot[1] + Math.PI/2)
-      camera.pos[0] -= Math.sin(camera.rot[1] + Math.PI/2)
-    }
-    if (key('A')) {
-      camera.pos[2] -= Math.cos(camera.rot[1] + Math.PI/2)
-      camera.pos[0] += Math.sin(camera.rot[1] + Math.PI/2)
-    }
 
     regl.clear({
       color: [0, 0, 0, 1],
