@@ -7,6 +7,7 @@ var dungeon = require('dungeon-generator')
 var Sky = require('./sky')
 var nano = require('nano-ecs')
 var vec3 = require('gl-vec3')
+var Billboard = require('./billboard')
 
 var camera = {
   pos: [0, -2, -10],
@@ -63,6 +64,17 @@ require('resl')({
     atlas: {
       type: 'image',
       src: 'atlas.png',
+      parser: function (data) {
+        return regl.texture({
+          data: data,
+          min: 'nearest',
+          mag: 'nearest'
+        })
+      }
+    },
+    foe: {
+      type: 'image',
+      src: 'assets/foe.png',
       parser: function (data) {
         return regl.texture({
           data: data,
@@ -217,7 +229,7 @@ function run (assets) {
     for (var j=0; j < map.depth; j++) {
       for (var k=0; k < map.height; k++) {
         map.lightBoxSet(i, k, j, function (pos, normal) {
-          return [0.3, 0.3, 0.3]
+          return [0.1, 0.1, 0.1]
         })
       }
     }
@@ -246,10 +258,11 @@ function run (assets) {
 
   var sky = Sky(regl)
 
+  var chr = Billboard(regl)
+
   console.time('light')
   var lights = []
   dun.children.forEach(function (p) {
-    console.log(p)
     lights.push({
       pos: {
         x: (p.position[0] + p.room_size[0]/2) * 2,
@@ -297,6 +310,18 @@ function run (assets) {
     map.draw({
       projection: projection,
       view: view
+    })
+
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, vec3.fromValues(12, 2.5, 12))
+    mat4.scale(model, model, vec3.fromValues(1.5, 1.5, 1.5))
+    var rot = -Math.atan2(-camera.pos[2] - 12, -camera.pos[0] - 12) + Math.PI/2
+    mat4.rotateY(model, model, rot)
+    chr({
+      model: model,
+      view: view,
+      texture: assets.foe
     })
   })
 }
