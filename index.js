@@ -93,7 +93,7 @@ function generateLevel (w, h) {
 
 function updatePhysics (world) {
   world.queryComponents([Physics]).forEach(function (e) {
-    e.physics.vel.y -= 0.001
+    e.physics.vel.y -= 0.006
 
     e.physics.pos.x += e.physics.vel.x
     e.physics.pos.y += e.physics.vel.y
@@ -101,6 +101,7 @@ function updatePhysics (world) {
 
     if (e.physics.pos.y <= 1 + e.physics.height/2) {
       e.physics.vel.y *= -0.5
+      e.physics.pos.y = 1 + e.physics.height/2
     }
   })
 }
@@ -157,8 +158,8 @@ function run (assets) {
   }
 
   var p = dun.children[Math.floor(Math.random() * dun.children.length)]
-  player.physics.pos.x = p.position[0] + p.size[0]/2
-  player.physics.pos.z = p.position[1] + p.size[1]/2
+  player.physics.pos.x = (p.position[0] + p.size[0]/2) * 3
+  player.physics.pos.z = (p.position[1] + p.size[1]/2) * 3
   player.physics.pos.y = 4
   console.log(p.position, p.size)
 
