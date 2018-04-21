@@ -71,9 +71,15 @@ function generateLevel (w, h) {
   var dun = new dungeon({
     size: [w, h],
     rooms: {
+      initial: {
+        min_size: [3, 3],
+        max_size: [3, 3],
+        max_exits: 1,
+        position: [0, 0]
+      },
       any: {
-        min_size: [2, 2],
-        max_size: [6, 6],
+        min_size: [5, 5],
+        max_size: [8, 8],
         max_exits: 4
       }
     },
@@ -83,7 +89,7 @@ function generateLevel (w, h) {
     symmetric_rooms: false,
     interconnects: 1,
     max_interconnect_length: 10,
-    room_count: 10
+    room_count: 6
   })
 
   dun.generate()
@@ -141,14 +147,14 @@ function run (assets) {
   player.addComponent(CameraController)
 
   // alloc + config map
-  var map = new Voxel(regl, 75, 10, 75, assets.atlas)
+  var map = new Voxel(regl, 50, 10, 50, assets.atlas)
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
       for (var k=0; k < map.height; k++) {
         if (k >= 1 && k <= 2) {
-          var x = Math.floor(i / 3)
-          var y = Math.floor(j / 3)
+          var x = Math.floor(i / 2)
+          var y = Math.floor(j / 2)
           map.set(i, k, j, dun.walls.get([x, y]) ? 1 : 0)
         } else {
           map.set(i, k, j, 1)
@@ -157,11 +163,15 @@ function run (assets) {
     }
   }
 
-  var p = dun.children[Math.floor(Math.random() * dun.children.length)]
-  player.physics.pos.x = (p.position[0] + p.size[0]/2) * 3
-  player.physics.pos.z = (p.position[1] + p.size[1]/2) * 3
+  // var p = dun.children[Math.floor(Math.random() * dun.children.length)]
+  // player.physics.pos.x = (p.position[0] + p.room_size[0]/2) * 2 + 0.5
+  // player.physics.pos.z = (p.position[1] + p.room_size[1]/2) * 2 + 0.5
+  var room = dun.initial_room
+  player.physics.pos.x = (room.position[0] + room.size[0]) * 2
+  player.physics.pos.z = (room.position[1] + room.size[1]) * 2
   player.physics.pos.y = 4
-  console.log(p.position, p.size)
+  camera.rot[1] = -Math.PI
+  // console.log(p.position, p.size)
 
   map.generateGeometry()
 
