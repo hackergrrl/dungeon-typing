@@ -244,13 +244,13 @@ function run (assets) {
   player.addComponent(CameraController)
   player.addTag('player')
 
-  // var foe = world.createEntity()
-  // foe.addComponent(Physics)
-  // foe.addComponent(MobAI)
-  // foe.physics.height = 2
-  // foe.physics.pos.x = 12
-  // foe.physics.pos.z = 12
-  // foe.physics.pos.y = 5
+  var foe = world.createEntity()
+  foe.addComponent(Physics)
+  foe.addComponent(MobAI)
+  foe.physics.height = 2
+  foe.physics.pos.x = 12
+  foe.physics.pos.z = 12
+  foe.physics.pos.y = 5
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
@@ -436,6 +436,17 @@ function run (assets) {
       if (new Date().getTime() > e.text3D.expireTime) {
         e.remove()
       }
+
+      world.queryComponents([MobAI, Physics]).forEach(function (m) {
+        var dx = m.physics.pos.x - e.physics.pos.x
+        var dz = m.physics.pos.z - e.physics.pos.z
+        var dist = Math.sqrt(dx*dx + dz*dz)
+        if (dist < 1) {
+          m.physics.vel.x += e.physics.vel.x * 0.1
+          m.physics.vel.z += e.physics.vel.z * 0.1
+          e.remove()
+        }
+      })
     })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
