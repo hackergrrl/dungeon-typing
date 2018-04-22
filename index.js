@@ -262,6 +262,10 @@ function updateParticles (world, state) {
       mat4.scale(p.mat, p.mat, vec3.fromValues(p.scale, p.scale, p.scale))
       mat4.rotateY(p.mat, p.mat, (state.tick + n * 13) * 0.1)
     }
+
+    if (e.particleEffect.color[3] <= 0) {
+      e.remove()
+    }
   })
 }
 
