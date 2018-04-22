@@ -258,9 +258,9 @@ function run (assets) {
 
   var sky = Sky(regl)
 
-  var chr = Billboard(regl)
+  var chr = Billboard(regl, 2)
 
-  function drawBillboard (x, y, z, texture) {
+  function drawBillboard (state, x, y, z, texture) {
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, z))
@@ -269,6 +269,7 @@ function run (assets) {
     mat4.rotateY(model, model, rot)
     chr({
       model: model,
+      frame: state.tick % 70 < 35 ? 0 : 0.5,
       view: view,
       texture: texture
     })
@@ -326,6 +327,6 @@ function run (assets) {
       view: view
     })
 
-    drawBillboard(12, 2.5, 12, assets.foe)
+    drawBillboard(state, 12, 2.5, 12, assets.foe)
   })
 }

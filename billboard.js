@@ -1,6 +1,8 @@
 var mat4 = require('gl-mat4')
 
-module.exports = function (regl) {
+module.exports = function (regl, frameCount) {
+  var f = 1 / frameCount
+
   return regl({
     frag: `
       precision mediump float;
@@ -23,15 +25,16 @@ module.exports = function (regl) {
       uniform mat4 model;
       uniform vec3 offset;
       uniform vec2 scale;
+      uniform float frame;
+      uniform float frameCount;
       attribute vec3 pos;
       attribute vec2 uv;
       varying vec3 vPos;
       varying vec2 vUv;
 
       void main () {
-        // vec3 scale3 = vec3(scale, 1.0);
-        gl_Position = projection * view * model * vec4(pos, 1.0);// * vec4(pos * scale3 + offset, 1.0);
-        vUv = uv;
+        gl_Position = projection * view * model * vec4(pos, 1.0);
+        vUv = vec2(uv.x + frame, uv.y);
         vPos = pos;
       }
     `,
@@ -48,11 +51,11 @@ module.exports = function (regl) {
       ],
       uv: [
         [ 0, 0 ],
-        [ 1, 0 ],
-        [ 1, 1 ],
+        [ f, 0 ],
+        [ f, 1 ],
 
         [ 0, 0 ],
-        [ 1, 1 ],
+        [ f, 1 ],
         [ 0, 1 ]
       ]
     },
@@ -75,9 +78,8 @@ module.exports = function (regl) {
       },
       view: regl.prop('view'),
       model: regl.prop('model'),
-      // offset: regl.prop('offset'),
       texture: regl.prop('texture'),
-      // scale: regl.prop('scale')
+      frame: regl.prop('frame')
     },
 
     count: 6
