@@ -48,6 +48,18 @@ function pointLight (lpos, lightIntensity, vpos, normal) {
   return Math.min(2.0, Math.max(0, lightIntensity / (dist*dist)))
 }
 
+function spawnParticleLevelUp (at) {
+  var parts = world.createEntity()
+  parts.addComponent(ParticleEffect)
+  parts.particleEffect.init({
+    count: 25,
+    pos: at,
+    speed: 0.02,
+    fadeRate: 0.01,
+    color: [1, 1, 0.1, 1]
+  })
+}
+
 function spawnParticleStrike (at) {
   var parts = world.createEntity()
   parts.addComponent(ParticleEffect)
@@ -236,6 +248,8 @@ function Level (e) {
     this.xp += xp
     if (this.xp >= this.xpNext) {
       this.level++
+      this.xp = (this.xp - this.xpNext)
+      this.xpNext = Math.floor(this.xpNext * 1.2)
       e.emit('level-up', this.level)
     }
   }
@@ -531,6 +545,13 @@ function run (assets) {
     camera.rot[0] = -Math.PI/5
     console.log('you are remarkably dead')
   })
+  player.on('level-up', function () {
+    spawnParticleLevelUp(vecify(player.physics.pos))
+    player.health.max = Math.floor(player.health.max * 1.25)
+    player.health.amount = player.health.max
+    player.mana.max = Math.floor(player.mana.max * 1.25)
+    player.mana.amount = player.mana.max
+  })
 
   var foe = world.createEntity()
   foe.addComponent(Physics)
@@ -538,7 +559,7 @@ function run (assets) {
   foe.addComponent(TextHolder)
   foe.addComponent(Health)
   foe.health.init(10)
-  foe.mobAI.xp = 12
+  foe.mobAI.xp = 60
   foe.physics.height = 2
   foe.physics.pos.x = 12
   foe.physics.pos.z = 12
@@ -809,6 +830,7 @@ function run (assets) {
     var mpDanger = (1 - mp) * 0.4
     hpMeter(Math.floor(plr.health.amount * 0.5), Math.floor(plr.health.max * 0.5), state.tick, hpDanger)
     mpMeter(Math.floor(plr.mana.amount * 0.5), Math.floor(plr.mana.max * 0.5), state.tick, mpDanger)
-    xpMeter(plr.level.xp, plr.level.xpNext, state.tick, 0.0)
+    var xp = plr.level.xp / plr.level.xpNext
+    xpMeter(Math.floor(xp * 40), 40, state.tick, 0.0)
   })
 }
