@@ -9,6 +9,7 @@ var vec3 = require('gl-vec3')
 var Billboard = require('./billboard')
 var Text = require('./text')
 var Particle = require('./particle')
+var Meter = require('./meter')
 
 var camera = {
   pos: [0, -2, -10],
@@ -196,6 +197,21 @@ function Health (e) {
     if (this.amount <= 0) {
       e.emit('death')
     }
+  }
+}
+
+function Mana (e) {
+  this.amount = 100
+  this.max = 100
+
+  this.init = function (max) {
+    this.amount = this.max = max
+  }
+
+  this.spend = function (num) {
+    if (this.amount - num < 0) return false
+    this.amount -= num
+    return true
   }
 }
 
@@ -467,6 +483,10 @@ function run (assets) {
   var player = world.createEntity()
   player.addComponent(Physics)
   player.addComponent(CameraController)
+  player.addComponent(Health)
+  player.addComponent(Mana)
+  player.health.init(30)
+  player.mana.init(12)
   player.addTag('player')
 
   var foe = world.createEntity()
@@ -542,6 +562,9 @@ function run (assets) {
                         [0, 1, 0])
 
   var sky = Sky(regl)
+
+  var hpMeter = Meter(regl, [0.85, 0.8], [1, 0, 0, 0.75])
+  var mpMeter = Meter(regl, [0.93, 0.8], [0, 0, 1, 0.75])
 
   var chr = Billboard(regl, 2)
 
@@ -731,5 +754,11 @@ function run (assets) {
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
       drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
     })
+
+    var plr = world.queryTag('player')[0]
+    var hp = plr.health.amount / plr.health.max
+    var mp = plr.mana.amount / plr.mana.max
+    hpMeter(Math.floor(plr.health.amount * 0.5), state.tick, 1 - hp)
+    mpMeter(Math.floor(plr.mana.amount * 0.5), state.tick, 1 - mp)
   })
 }
