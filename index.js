@@ -12,7 +12,9 @@ var Particle = require('./particle')
 
 var camera = {
   pos: [0, -2, -10],
-  rot: [0, 0, 0]
+  rot: [0, 0, 0],
+  shake: [0, 0, 0],
+  shakeVel: [0, 0, 0]
 }
 
 var lexicon = {
@@ -54,6 +56,9 @@ function checkLexicon (plr, mob, text) {
 
 function hitCommand (plr, target) {
   console.log('BAM!')
+  camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5
+  camera.shakeVel[1] = 0
+  camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5
 }
 
 // gravity-affected, bounding box vs tilemap, position
@@ -281,9 +286,19 @@ function updatePhysics (world) {
 
 function updateCamera (world) {
   world.queryComponents([CameraController]).forEach(function (e) {
-    camera.pos[0] = -e.physics.pos.x
-    camera.pos[1] = -e.physics.pos.y
-    camera.pos[2] = -e.physics.pos.z
+    camera.pos[0] = -e.physics.pos.x - camera.shake[0]
+    camera.pos[1] = -e.physics.pos.y - camera.shake[1]
+    camera.pos[2] = -e.physics.pos.z - camera.shake[2]
+
+    camera.shakeVel[0] += -camera.shake[0] * 0.1
+    camera.shakeVel[1] += -camera.shake[1] * 0.1
+    camera.shakeVel[2] += -camera.shake[2] * 0.1
+    camera.shakeVel[0] *= 0.75
+    camera.shakeVel[1] *= 0.75
+    camera.shakeVel[2] *= 0.75
+    camera.shake[0] += camera.shakeVel[0]
+    camera.shake[1] += camera.shakeVel[1]
+    camera.shake[2] += camera.shakeVel[2]
 
     if (key('<up>')) {
       e.physics.vel.z -= Math.cos(camera.rot[1]) * 0.01
@@ -570,7 +585,7 @@ function run (assets) {
                 m.textHolder.fadeOut()
                 setTimeout(function () {
                   res(plr, m)
-                }, 300)
+                }, 100)
               }
             }, 300)
           } else {
