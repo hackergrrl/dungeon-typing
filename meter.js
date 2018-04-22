@@ -5,10 +5,10 @@ module.exports = function (regl, at, color) {
     frag: `
       precision mediump float;
 
-      uniform vec4 color;
+      varying vec4 vColor;
 
       void main () {
-        gl_FragColor = color;
+        gl_FragColor = vColor;
       }
     `,
 
@@ -16,14 +16,18 @@ module.exports = function (regl, at, color) {
       precision mediump float;
 
       attribute vec2 pos;
+      attribute vec4 color;
+      varying vec4 vColor;
 
       void main () {
         gl_Position = vec4(pos, 0.0, 1.0);
+        vColor = color;
       }
     `,
 
     attributes: {
-      pos: regl.prop('positions')
+      pos: regl.prop('positions'),
+      color: regl.prop('colors')
     },
 
     blend: {
@@ -41,13 +45,14 @@ module.exports = function (regl, at, color) {
     elements: regl.prop('elements')
   })
 
-  return function (segs, tick, danger) {
+  return function (segs, maxSegs, tick, danger) {
     var pos = []
     var elms = []
+    var col = []
     var size = 0.015
     var y = at[1]
     var n = 0
-    for (var i=0; i < segs; i++) {
+    for (var i=0; i < maxSegs; i++) {
       if (i % 2 === 0) {
         pos.push([at[0] - size, y])
         pos.push([at[0] + size, y + size*2])
@@ -57,6 +62,15 @@ module.exports = function (regl, at, color) {
         pos.push([at[0] - size, y + size*2])
         pos.push([at[0] - size, y - size*2])
       }
+      if (i <= segs) {
+        col.push([color[0], color[1], color[2], color[3]])
+        col.push([color[0], color[1], color[2], color[3]])
+        col.push([color[0], color[1], color[2], color[3]])
+      } else {
+        col.push([color[0], color[1], color[2], color[3] * 0.1])
+        col.push([color[0], color[1], color[2], color[3] * 0.1])
+        col.push([color[0], color[1], color[2], color[3] * 0.1])
+      }
       elms.push(n)
       elms.push(n+1)
       elms.push(n+2)
@@ -65,6 +79,7 @@ module.exports = function (regl, at, color) {
     }
     draw({
       positions: pos,
+      colors: col,
       elements: elms
     })
   }

@@ -773,10 +773,10 @@ function run (assets) {
     var plr = world.queryTag('player')[0]
     var hp = plr.health.amount / plr.health.max
     var mp = plr.mana.amount / plr.mana.max
-    var hpDanger = (1 - hp) * (1 - hp)
-    var mpDanger = (1 - mp) * (1 - mp)
-    hpMeter(Math.floor(plr.health.amount * 0.5), state.tick, hpDanger)
-    mpMeter(Math.floor(plr.mana.amount * 0.5), state.tick, mpDanger * 0.7)
-    xpMeter(20, state.tick, 0.0)
+    var hpDanger = (1 - hp) * 0.4
+    var mpDanger = (1 - mp) * 0.4
+    hpMeter(Math.floor(plr.health.amount * 0.5), Math.floor(plr.health.max * 0.5), state.tick, hpDanger)
+    mpMeter(Math.floor(plr.mana.amount * 0.5), Math.floor(plr.mana.max * 0.5), state.tick, mpDanger)
+    xpMeter(20, 50, state.tick, 0.0)
   })
 }
