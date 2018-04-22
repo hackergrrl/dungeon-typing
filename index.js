@@ -21,7 +21,8 @@ var lastLetter = 0
 var systems = [
   updatePhysics,
   updateCamera,
-  updateMobAI
+  updateMobAI,
+  updateParticles
 ]
 
 var projection
@@ -64,6 +65,28 @@ function CameraController () {
     x: 0,
     y: 0,
     z: 0
+  }
+}
+
+function ParticleEffect () {
+  this.data = null
+  this.draw = Particle(regl)
+  this.color = null
+
+  this.init = function (opts) {
+    this.color = opts.color
+    this.data = new Array(opts.count)
+      .fill()
+      .map(function () {
+        var vel = vec3.random(vec3.create(), opts.speed)
+        vec3.add(vel, vel, vec3.fromValues(0, 0.03, 0))
+        return {
+          pos: vec3.clone(opts.pos),
+          vel: vel,
+          scale: 0.1,
+          mat: mat4.create()
+        }
+      })
   }
 }
 
@@ -225,6 +248,22 @@ function updateCamera (world) {
   })
 }
 
+function updateParticles () {
+  world.queryComponents([ParticleEffect]).forEach(function (e) {
+    e.particleEffect.color[3] -= 0.03
+
+    for (var i=0; i < e.particleEffect.data.length; i++) {
+      var p = e.particleEffect.data[i]
+      vec3.add(p.pos, p.pos, p.vel)
+      vec3.add(p.vel, p.vel, vec3.fromValues(0, -0.003, 0))
+
+      mat4.identity(p.mat)
+      mat4.translate(p.mat, p.mat, p.pos)
+      mat4.scale(p.mat, p.mat, vec3.fromValues(p.scale, p.scale, p.scale))
+    }
+  })
+}
+
 function run (assets) {
   var accum = 0
   var frames = 0
@@ -242,6 +281,17 @@ function run (assets) {
   foe.physics.pos.x = 12
   foe.physics.pos.z = 12
   foe.physics.pos.y = 5
+
+  function spawnParticleHit (at) {
+    var parts = world.createEntity()
+    parts.addComponent(ParticleEffect)
+    parts.particleEffect.init({
+      count: 7,
+      pos: at,
+      speed: 0.05,
+      color: [0.7, 0.7, 0.7, 1.0]
+    })
+  }
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
@@ -307,8 +357,6 @@ function run (assets) {
   var sky = Sky(regl)
 
   var chr = Billboard(regl, 2)
-
-  var text = Text(regl, 'MONSTER HUNGRY')
 
   function drawBillboard (state, x, y, z, texture) {
     var model = mat4.create()
@@ -422,18 +470,6 @@ function run (assets) {
       view: view
     })
 
-    var model = mat4.create()
-    mat4.identity(model)
-    mat4.translate(model, model, vec3.fromValues(8, 3, 8))
-    mat4.scale(model, model, vec3.fromValues(0.25, 0.25, 0.25))
-    mat4.rotateY(model, model, state.tick * 0.06)
-    particle({
-      projection: projection,
-      view: view,
-      model: model,
-      color: [0.8, 0.3, 0.7, 0.5]
-    })
-
     world.queryComponents([Text3D]).forEach(function (e) {
       drawText(e.text3D.draw, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z)
 
@@ -447,11 +483,24 @@ function run (assets) {
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
         if (dist < 1) {
-          m.physics.vel.x += e.physics.vel.x * 0.1
-          m.physics.vel.z += e.physics.vel.z * 0.1
+          m.physics.vel.x += e.physics.vel.x * 0.01
+          m.physics.vel.z += e.physics.vel.z * 0.01
+          spawnParticleHit(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
           e.remove()
         }
       })
+    })
+
+    world.queryComponents([ParticleEffect]).forEach(function (e) {
+      var commands = e.particleEffect.data.map(function (d) {
+        return {
+          projection: projection,
+          view: view,
+          model: d.mat,
+          color: e.particleEffect.color
+        }
+      })
+      e.particleEffect.draw(commands)
     })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
