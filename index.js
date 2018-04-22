@@ -36,6 +36,10 @@ var projection
 var world = nano()
 var map
 
+function vecify (v) {
+  return vec3.fromValues(v.x, v.y, v.z)
+}
+
 function pointLight (lpos, lightIntensity, vpos, normal) {
   var out = vec3.create()
   var dir = vec3.sub(out, vpos, lpos)
@@ -49,19 +53,23 @@ function spawnParticleStrike (at) {
   parts.particleEffect.init({
     count: 10,
     pos: at,
-    speed: 0.025,
-    color: [0.8, 0.8, 0.2, 1.0]
+    speed: 0.08,
+    fadeRate: 0.02,
+    color: [1, 1, 1, 1]
   })
 }
 
 function spawnParticleBlood (at) {
   var parts = world.createEntity()
   parts.addComponent(ParticleEffect)
+  at = vec3.clone(at)
+  at[1] += 1.0
   parts.particleEffect.init({
     count: 20,
     pos: at,
     speed: 0.025,
-    color: [219/255, 25/255, 25/255, 1]
+    fadeRate: 0.01,
+    color: [1, 0, 0, 1]
   })
 }
 
@@ -96,8 +104,8 @@ function hitCommand (plr, target) {
   if (dist <= 4) {
     target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1
     target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1
+    spawnParticleStrike(vecify(target.physics.pos))
     target.health.damage(7)
-    spawnParticleStrike(target.physics.pos)
   }
 }
 
@@ -149,9 +157,26 @@ function Physics () {
 function MobAI (e) {
   e.on('damage', function (amount) {
     console.log('ow, I have', e.health.amount, 'hp left')
+
+    var txt = world.createEntity()
+    txt.addComponent(Text3D)
+    txt.addComponent(Physics)
+    txt.text3D.generate(''+amount, [0.8, 0.1, 0.1, 1.0])
+    txt.physics.pos = JSON.parse(JSON.stringify(e.physics.pos))
+    txt.physics.pos.y = 2.5
+    txt.physics.vel.y = 0.15
+    txt.physics.vel.x = (Math.random() - 0.5) * 0.05
+    txt.physics.vel.z = (Math.random() - 0.5) * 0.05
+    txt.physics.vel.x += Math.sin(camera.rot[1]) * 0.05
+    txt.physics.vel.z -= Math.cos(camera.rot[1]) * 0.05
+    txt.physics.height = 0.8
+    txt.physics.width = 0.2
+    txt.physics.depth = 0.2
+    txt.physics.friction = 0.3
+    // txt.text3D.expireTime = new Date().getTime() + 2000
   })
   e.on('death', function () {
-    spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
+    // spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
     e.remove()
   })
 }
@@ -168,10 +193,9 @@ function Health (e) {
     if (this.amount <= 0) return
 
     this.amount -= num
+    e.emit('damage', num)
     if (this.amount <= 0) {
       e.emit('death')
-    } else {
-      e.emit('damage', num)
     }
   }
 }
@@ -191,6 +215,7 @@ function ParticleEffect () {
 
   this.init = function (opts) {
     this.color = opts.color
+    this.fadeRate = opts.fadeRate || 0.03
     this.data = new Array(opts.count)
       .fill()
       .map(function () {
@@ -206,9 +231,12 @@ function ParticleEffect () {
   }
 }
 
+function TextProjectile () {
+}
+
 function Text3D () {
-  this.generate = function (string) {
-    this.draw = Text(regl, string)
+  this.generate = function (string, color) {
+    this.draw = Text(regl, string, color || undefined)
     this.text = string
   }
 
@@ -411,7 +439,7 @@ function updateCamera (world) {
 
 function updateParticles (world, state) {
   world.queryComponents([ParticleEffect]).forEach(function (e, n) {
-    e.particleEffect.color[3] -= 0.03
+    e.particleEffect.color[3] -= e.particleEffect.fadeRate
 
     for (var i=0; i < e.particleEffect.data.length; i++) {
       var p = e.particleEffect.data[i]
@@ -564,6 +592,7 @@ function run (assets) {
     var k = ev.key
     var txt = world.createEntity()
     txt.addComponent(Text3D)
+    txt.addComponent(TextProjectile)
     txt.addComponent(Physics)
     txt.text3D.generate(k)
 
@@ -645,7 +674,9 @@ function run (assets) {
         e.remove()
         return
       }
+    })
 
+    world.queryComponents([Text3D, TextProjectile]).forEach(function (e) {
       world.queryComponents([MobAI, Physics, TextHolder]).forEach(function (m) {
         var dx = m.physics.pos.x - e.physics.pos.x
         var dz = m.physics.pos.z - e.physics.pos.z

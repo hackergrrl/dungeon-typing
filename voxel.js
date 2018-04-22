@@ -154,6 +154,7 @@ Voxel.prototype.addColor = function (x, y, z, side, vert, color) {
 }
 
 Voxel.prototype.get = function (x, y, z) {
+  if (x < 0 || y < 0 || z < 0 || x >= this.width || y >= this.height || z >= this.depth) return
   return this.map[x][y][z]
 }
 
