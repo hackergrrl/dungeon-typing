@@ -2,7 +2,9 @@ var mat4 = require('gl-mat4')
 var vectorize = require('vectorize-text')
 var tess = require('triangulate-polyline')
 
-module.exports = function (regl, text) {
+module.exports = function (regl, text, color) {
+  color = color || [1, 1, 1, 1]
+
   var mesh = vectorize(text, {
     triangles: true,
     textAlign: 'center',
@@ -13,11 +15,10 @@ module.exports = function (regl, text) {
     frag: `
       precision mediump float;
 
-      varying vec3 vPos;
-      varying vec2 vUv;
+      uniform vec4 color;
 
       void main () {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        gl_FragColor = color;
       }
     `,
 
@@ -41,7 +42,8 @@ module.exports = function (regl, text) {
     uniforms: {
       projection: regl.prop('projection'),
       view: regl.prop('view'),
-      model: regl.prop('model')
+      model: regl.prop('model'),
+      color: function () { return color }
     },
 
     elements: mesh.cells,
