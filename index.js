@@ -44,6 +44,8 @@ function Physics () {
   this.length = 4
   this.height = 4
 
+  this.friction = 0.94
+
   this.vel = {
     x: 0,
     y: 0,
@@ -169,11 +171,11 @@ function updatePhysics (world) {
     // wall collisions; test x and z separately
     var tx = e.physics.pos.x + e.physics.vel.x
     if (isSolid(tx, e.physics.pos.z)) {
-      e.physics.vel.x = 0
+      e.physics.vel.x *= -0.3
     }
     var tz = e.physics.pos.z + e.physics.vel.z
     if (isSolid(e.physics.pos.x, tz)) {
-      e.physics.vel.z = 0
+      e.physics.vel.z *= -0.3
     }
 
     // newtonian physics
@@ -181,14 +183,24 @@ function updatePhysics (world) {
     e.physics.pos.y += e.physics.vel.y
     e.physics.pos.z += e.physics.vel.z
 
-    // ground friction
-    e.physics.vel.x *= 0.94
-    e.physics.vel.z *= 0.94
-
     // ground collision
-    if (e.physics.pos.y <= 1 + e.physics.height/2) {
+    var onGround = false
+    if (e.physics.pos.y - e.physics.height/2 <= 1) {
       e.physics.vel.y *= -0.3
       e.physics.pos.y = 1 + e.physics.height/2
+      onGround = true
+    }
+
+    // ceiling collision
+    if (e.physics.pos.y >= 5) {
+      e.physics.vel.y *= -0.3
+      e.physics.pos.y = 5
+    }
+
+    // ground friction
+    if (onGround) {
+      e.physics.vel.x *= e.physics.friction
+      e.physics.vel.z *= e.physics.friction
     }
   })
 }
@@ -228,13 +240,13 @@ function run (assets) {
   player.addComponent(CameraController)
   player.addTag('player')
 
-  var foe = world.createEntity()
-  foe.addComponent(Physics)
-  foe.addComponent(MobAI)
-  foe.physics.height = 2
-  foe.physics.pos.x = 12
-  foe.physics.pos.z = 12
-  foe.physics.pos.y = 5
+  // var foe = world.createEntity()
+  // foe.addComponent(Physics)
+  // foe.addComponent(MobAI)
+  // foe.physics.height = 2
+  // foe.physics.pos.x = 12
+  // foe.physics.pos.z = 12
+  // foe.physics.pos.y = 5
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
@@ -352,12 +364,23 @@ function run (assets) {
     if (/[wasdWASD]/.test(k)) return
     var txt = world.createEntity()
     txt.addComponent(Text3D)
+    txt.addComponent(Physics)
     txt.text3D.generate(k)
 
     var plr = world.queryTag('player')[0]
-    txt.text3D.x = plr.physics.pos.x + Math.sin(camera.rot[1]) * 5.0
-    txt.text3D.z = plr.physics.pos.z - Math.cos(camera.rot[1]) * 5.0
-    txt.text3D.y = 3
+    var yrot = camera.rot[1] + 0.05
+    txt.physics.pos.x = plr.physics.pos.x + Math.sin(yrot)
+    txt.physics.pos.z = plr.physics.pos.z - Math.cos(yrot)
+    txt.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.1
+    txt.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.1
+    txt.physics.pos.y = 3
+    txt.physics.vel.x = plr.physics.vel.x + Math.sin(yrot) * 0.8
+    txt.physics.vel.z = plr.physics.vel.z - Math.cos(yrot) * 0.8
+    txt.physics.vel.y = plr.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
+    txt.physics.height = 0.2
+    txt.physics.width = 0.2
+    txt.physics.depth = 0.2
+    txt.physics.friction = 0.3
   }
 
   regl.frame(function (state) {
@@ -397,7 +420,7 @@ function run (assets) {
     })
 
     world.queryComponents([Text3D]).forEach(function (e) {
-      drawText(e.text3D.draw, e.text3D.x, e.text3D.y, e.text3D.z)
+      drawText(e.text3D.draw, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z)
     })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
