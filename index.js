@@ -64,9 +64,8 @@ function spawnParticleBlood (at) {
   var parts = world.createEntity()
   parts.addComponent(ParticleEffect)
   at = vec3.clone(at)
-  at[1] += 1.0
   parts.particleEffect.init({
-    count: 20,
+    count: 10,
     pos: at,
     speed: 0.025,
     fadeRate: 0.01,
@@ -96,17 +95,25 @@ function checkLexicon (plr, mob, text) {
   return false
 }
 
-function hitCommand (plr, target) {
-  camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5
-  camera.shakeVel[1] = 0
-  camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5
+function hitCommand (attacker, target) {
+  var player = world.queryTag('player')[0]
+  var mult = 1
+  if (attacker !== player) mult = -0.5
 
-  var dist = physicsDistance(plr, target)
+  camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
+  camera.shakeVel[1] = 0
+  camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5 * mult
+
+  var dist = physicsDistance(attacker, target)
   if (dist <= 4) {
-    target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1
-    target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1
-    spawnParticleStrike(vecify(target.physics.pos))
-    target.health.damage(7)
+    target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
+    target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
+    if (mult === 1) {
+      spawnParticleStrike(vecify(target.physics.pos))
+    } else {
+      spawnParticleBlood(vecify(target.physics.pos))
+    }
+    target.health.damage(2)
   }
 }
 
@@ -367,6 +374,7 @@ function isSolid (x, z) {
 function updateMobAI (world) {
   world.queryComponents([MobAI, Physics]).forEach(function (e) {
     var plr = world.queryTag('player')[0]
+    if (plr.health.amount <= 0) return
     var dx = plr.physics.pos.x - e.physics.pos.x
     var dz = plr.physics.pos.z - e.physics.pos.z
     var dist = Math.sqrt(dx*dx + dz*dz)
@@ -375,6 +383,11 @@ function updateMobAI (world) {
       dz /= dist
       e.physics.vel.x += dx * 0.002
       e.physics.vel.z += dz * 0.002
+    } else {
+      if (!e.mobAI.nextAttack || e.mobAI.nextAttack <= new Date().getTime()) {
+        hitCommand(e, plr)
+        e.mobAI.nextAttack = new Date().getTime() + 1500
+      }
     }
   })
 }
