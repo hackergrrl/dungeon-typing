@@ -146,8 +146,8 @@ function updateMobAI (world) {
     var dist = Math.sqrt(dx*dx + dz*dz)
     dx /= dist
     dz /= dist
-    e.physics.vel.x += dx * 0.001
-    e.physics.vel.z += dz * 0.001
+    e.physics.vel.x += dx * 0.002
+    e.physics.vel.z += dz * 0.002
   })
 }
 
@@ -295,8 +295,8 @@ function run (assets) {
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, z))
-    mat4.scale(model, model, vec3.fromValues(1.5, 1.5, 1.5))
-    var rot = -Math.atan2(-camera.pos[2] - x, -camera.pos[0] - z) + Math.PI/2
+    mat4.scale(model, model, vec3.fromValues(1.2, 1.2, 1.2))
+    var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
     mat4.rotateY(model, model, rot)
     chr({
       model: model,
