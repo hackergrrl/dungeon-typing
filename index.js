@@ -19,7 +19,8 @@ var camera = {
 }
 
 var lexicon = {
-  'hit': hitCommand
+  'hit': hitCommand.bind(null, 7),
+  'slay': hitCommand.bind(null, 100)
 }
 
 var letters = 0
@@ -95,7 +96,7 @@ function checkLexicon (plr, mob, text) {
   return false
 }
 
-function hitCommand (attacker, target) {
+function hitCommand (dmg, attacker, target) {
   var player = world.queryTag('player')[0]
   var mult = 1
   if (attacker !== player) mult = -0.5
@@ -113,7 +114,7 @@ function hitCommand (attacker, target) {
     } else {
       spawnParticleBlood(vecify(target.physics.pos))
     }
-    target.health.damage(2)
+    target.health.damage(dmg)
   }
 }
 
@@ -385,7 +386,7 @@ function updateMobAI (world) {
       e.physics.vel.z += dz * 0.002
     } else {
       if (!e.mobAI.nextAttack || e.mobAI.nextAttack <= new Date().getTime()) {
-        hitCommand(e, plr)
+        hitCommand(2, e, plr)
         e.mobAI.nextAttack = new Date().getTime() + 1500
       }
     }
@@ -576,8 +577,9 @@ function run (assets) {
 
   var sky = Sky(regl)
 
-  var hpMeter = Meter(regl, [0.85, 0.8], [1, 0, 0, 0.75])
-  var mpMeter = Meter(regl, [0.93, 0.8], [0, 0, 1, 0.75])
+  var hpMeter = Meter(regl, [0.75, 0.8], [1, 0,    0, 0.75])
+  var mpMeter = Meter(regl, [0.83, 0.8], [0, 0,    1, 0.75])
+  var xpMeter = Meter(regl, [0.91, 0.8], [0, 0.65, 0, 0.5])
 
   var chr = Billboard(regl, 2)
 
@@ -775,5 +777,6 @@ function run (assets) {
     var mpDanger = (1 - mp) * (1 - mp)
     hpMeter(Math.floor(plr.health.amount * 0.5), state.tick, hpDanger)
     mpMeter(Math.floor(plr.mana.amount * 0.5), state.tick, mpDanger * 0.7)
+    xpMeter(20, state.tick, 0.0)
   })
 }
