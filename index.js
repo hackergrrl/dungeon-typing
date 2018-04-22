@@ -1,7 +1,6 @@
 var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var key = require('key-pressed')
-var pointer = require('pointer-lock')(document.body)
 var Voxel = require('./voxel')
 var dungeon = require('dungeon-generator')
 var Sky = require('./sky')
@@ -77,12 +76,6 @@ function Text3D () {
   this.expireTime = new Date().getTime() + 1500
 }
 
-pointer.on('attain', function (mv) {
-  mv.on('data', function (ev) {
-    camera.rot[0] += ev.dy * 0.005
-    camera.rot[1] += ev.dx * 0.005
-  })
-})
 
 require('resl')({
   manifest: {
@@ -215,21 +208,19 @@ function updateCamera (world) {
     camera.pos[1] = -e.physics.pos.y
     camera.pos[2] = -e.physics.pos.z
 
-    if (key('W')) {
+    if (key('<up>')) {
       e.physics.vel.z -= Math.cos(camera.rot[1]) * 0.01
       e.physics.vel.x += Math.sin(camera.rot[1]) * 0.01
     }
-    if (key('S')) {
+    if (key('<down>')) {
       e.physics.vel.z += Math.cos(camera.rot[1]) * 0.01
       e.physics.vel.x -= Math.sin(camera.rot[1]) * 0.01
     }
-    if (key('D')) {
-      e.physics.vel.z -= Math.cos(camera.rot[1] + Math.PI/2) * 0.01
-      e.physics.vel.x += Math.sin(camera.rot[1] + Math.PI/2) * 0.01
+    if (key('<right>')) {
+      camera.rot[1] += 0.03
     }
-    if (key('A')) {
-      e.physics.vel.z -= Math.cos(camera.rot[1] - Math.PI/2) * 0.01
-      e.physics.vel.x += Math.sin(camera.rot[1] - Math.PI/2) * 0.01
+    if (key('<left>')) {
+      camera.rot[1] -= 0.03
     }
   })
 }
@@ -365,7 +356,6 @@ function run (assets) {
 
   document.body.onkeypress = function (ev) {
     var k = ev.key
-    if (/[wasdWASD]/.test(k)) return
     var txt = world.createEntity()
     txt.addComponent(Text3D)
     txt.addComponent(Physics)
