@@ -314,6 +314,8 @@ function run (assets) {
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, z))
     mat4.scale(model, model, vec3.fromValues(1, -1, 1))
+    var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
+    mat4.rotateY(model, model, rot)
     text({
       projection: projection,
       view: view,
