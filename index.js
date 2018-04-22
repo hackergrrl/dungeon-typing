@@ -19,8 +19,7 @@ var camera = {
 }
 
 var lexicon = {
-  'hit': hitCommand.bind(null, 7),
-  'slay': hitCommand.bind(null, 100)
+  'hit': hitCommand.bind(null, 7)
 }
 
 var letters = 0
@@ -114,7 +113,7 @@ function hitCommand (dmg, attacker, target) {
     } else {
       spawnParticleBlood(vecify(target.physics.pos))
     }
-    target.health.damage(dmg)
+    target.health.damage(dmg, attacker)
   }
 }
 
@@ -183,7 +182,12 @@ function MobAI (e) {
     txt.physics.depth = 0.2
     txt.physics.friction = 0.3
   })
-  e.on('death', function () {
+  e.on('death', function (attacker) {
+    console.log('1')
+    if (attacker.level) {
+      console.log('2', e.mobAI.xp)
+      attacker.level.gain(e.mobAI.xp || 0)
+    }
     // spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
     e.remove()
   })
@@ -197,13 +201,13 @@ function Health (e) {
     this.amount = this.max = max
   }
 
-  this.damage = function (num) {
+  this.damage = function (num, attacker) {
     if (this.amount <= 0) return
 
     this.amount -= num
     e.emit('damage', num)
     if (this.amount <= 0) {
-      e.emit('death')
+      e.emit('death', attacker)
     }
   }
 }
@@ -220,6 +224,20 @@ function Mana (e) {
     if (this.amount - num < 0) return false
     this.amount -= num
     return true
+  }
+}
+
+function Level (e) {
+  this.xp = 0
+  this.xpNext = 50
+  this.level = 1
+
+  this.gain = function (xp) {
+    this.xp += xp
+    if (this.xp >= this.xpNext) {
+      this.level++
+      e.emit('level-up', this.level)
+    }
   }
 }
 
@@ -500,8 +518,9 @@ function run (assets) {
   player.addComponent(Physics)
   player.addComponent(CameraController)
   player.addComponent(Health)
+  player.addComponent(Level)
   player.addComponent(Mana)
-  player.health.init(10)
+  player.health.init(30)
   player.mana.init(12)
   player.addTag('player')
   player.on('death', function () {
@@ -519,6 +538,7 @@ function run (assets) {
   foe.addComponent(TextHolder)
   foe.addComponent(Health)
   foe.health.init(10)
+  foe.mobAI.xp = 12
   foe.physics.height = 2
   foe.physics.pos.x = 12
   foe.physics.pos.z = 12
@@ -638,6 +658,9 @@ function run (assets) {
   console.timeEnd('light')
 
   document.body.onkeypress = function (ev) {
+    var plr = world.queryTag('player')[0]
+    if (plr.health.amount <= 0) return
+
     var k = ev.key
     var txt = world.createEntity()
     txt.addComponent(Text3D)
@@ -648,7 +671,6 @@ function run (assets) {
     letters++
     lastLetter = new Date().getTime()
 
-    var plr = world.queryTag('player')[0]
     var yrot = camera.rot[1] - 0.05 + letters*0.01
     txt.physics.pos.x = plr.physics.pos.x + Math.sin(yrot)
     txt.physics.pos.z = plr.physics.pos.z - Math.cos(yrot)
@@ -787,6 +809,6 @@ function run (assets) {
     var mpDanger = (1 - mp) * 0.4
     hpMeter(Math.floor(plr.health.amount * 0.5), Math.floor(plr.health.max * 0.5), state.tick, hpDanger)
     mpMeter(Math.floor(plr.mana.amount * 0.5), Math.floor(plr.mana.max * 0.5), state.tick, mpDanger)
-    xpMeter(20, 50, state.tick, 0.0)
+    xpMeter(plr.level.xp, plr.level.xpNext, state.tick, 0.0)
   })
 }
