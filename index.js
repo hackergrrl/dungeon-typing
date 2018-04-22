@@ -515,18 +515,18 @@ function updateCamera (world) {
     if (e.health.amount <= 0) return
 
     if (key('<up>')) {
-      e.physics.vel.z -= Math.cos(camera.rot[1]) * 0.01
-      e.physics.vel.x += Math.sin(camera.rot[1]) * 0.01
+      e.physics.vel.z -= Math.cos(camera.rot[1]) * 0.008
+      e.physics.vel.x += Math.sin(camera.rot[1]) * 0.008
     }
     if (key('<down>')) {
-      e.physics.vel.z += Math.cos(camera.rot[1]) * 0.01
-      e.physics.vel.x -= Math.sin(camera.rot[1]) * 0.01
+      e.physics.vel.z += Math.cos(camera.rot[1]) * 0.005
+      e.physics.vel.x -= Math.sin(camera.rot[1]) * 0.005
     }
     if (key('<right>')) {
-      camera.rot[1] += 0.03
+      camera.rot[1] += 0.04
     }
     if (key('<left>')) {
-      camera.rot[1] -= 0.03
+      camera.rot[1] -= 0.04
     }
   })
 }
