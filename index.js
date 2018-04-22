@@ -62,6 +62,15 @@ function CameraController () {
   }
 }
 
+function Text3D () {
+  this.generate = function (string) {
+    this.draw = Text(regl, string)
+  }
+
+  this.x = this.y = this.z = 0
+  this.draw = undefined
+}
+
 pointer.on('attain', function (mv) {
   mv.on('data', function (ev) {
     camera.rot[0] += ev.dy * 0.005
@@ -222,7 +231,7 @@ function run (assets) {
   var foe = world.createEntity()
   foe.addComponent(Physics)
   foe.addComponent(MobAI)
-  foe.physics.height = 3
+  foe.physics.height = 2
   foe.physics.pos.x = 12
   foe.physics.pos.z = 12
   foe.physics.pos.y = 5
@@ -298,7 +307,7 @@ function run (assets) {
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, z))
-    mat4.scale(model, model, vec3.fromValues(1.2, 1.2, 1.2))
+    mat4.scale(model, model, vec3.fromValues(1.0, 1.0, 1.0))
     var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
     mat4.rotateY(model, model, rot)
     chr({
@@ -338,6 +347,19 @@ function run (assets) {
   updateLights(lights)
   console.timeEnd('light')
 
+  document.body.onkeypress = function (ev) {
+    var k = ev.key
+    if (/[wasdWASD]/.test(k)) return
+    var txt = world.createEntity()
+    txt.addComponent(Text3D)
+    txt.text3D.generate(k)
+
+    var plr = world.queryTag('player')[0]
+    txt.text3D.x = plr.physics.pos.x + Math.sin(camera.rot[1]) * 5.0
+    txt.text3D.z = plr.physics.pos.z - Math.cos(camera.rot[1]) * 5.0
+    txt.text3D.y = 3
+  }
+
   regl.frame(function (state) {
     accum += (new Date().getTime() - last)
     frames++
@@ -374,7 +396,9 @@ function run (assets) {
       view: view
     })
 
-    drawText(text, 12, 3, 12)
+    world.queryComponents([Text3D]).forEach(function (e) {
+      drawText(e.text3D.draw, e.text3D.x, e.text3D.y, e.text3D.z)
+    })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
       drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
