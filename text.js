@@ -46,6 +46,6 @@ module.exports = function (regl, text) {
 
     elements: mesh.cells,
 
-    depth: { enable: false }
+    // depth: { enable: false }
   })
 }

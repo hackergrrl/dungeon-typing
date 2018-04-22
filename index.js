@@ -15,6 +15,9 @@ var camera = {
   rot: [0, 0, 0]
 }
 
+var letters = 0
+var lastLetter = 0
+
 var systems = [
   updatePhysics,
   updateCamera,
@@ -71,6 +74,7 @@ function Text3D () {
 
   this.x = this.y = this.z = 0
   this.draw = undefined
+  this.expireTime = new Date().getTime() + 1500
 }
 
 pointer.on('attain', function (mv) {
@@ -367,8 +371,11 @@ function run (assets) {
     txt.addComponent(Physics)
     txt.text3D.generate(k)
 
+    letters++
+    lastLetter = new Date().getTime()
+
     var plr = world.queryTag('player')[0]
-    var yrot = camera.rot[1] + 0.05
+    var yrot = camera.rot[1] - 0.05 + letters*0.01
     txt.physics.pos.x = plr.physics.pos.x + Math.sin(yrot)
     txt.physics.pos.z = plr.physics.pos.z - Math.cos(yrot)
     txt.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.1
@@ -377,7 +384,7 @@ function run (assets) {
     txt.physics.vel.x = plr.physics.vel.x + Math.sin(yrot) * 0.8
     txt.physics.vel.z = plr.physics.vel.z - Math.cos(yrot) * 0.8
     txt.physics.vel.y = plr.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
-    txt.physics.height = 0.2
+    txt.physics.height = 0.8
     txt.physics.width = 0.2
     txt.physics.depth = 0.2
     txt.physics.friction = 0.3
@@ -392,6 +399,10 @@ function run (assets) {
       accum = 0
     }
     last = new Date().getTime()
+
+    if (new Date().getTime() - lastLetter > 400) {
+      letters = 0
+    }
 
     systems.forEach(function (s) { s(world) })
 
@@ -421,6 +432,10 @@ function run (assets) {
 
     world.queryComponents([Text3D]).forEach(function (e) {
       drawText(e.text3D.draw, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z)
+
+      if (new Date().getTime() > e.text3D.expireTime) {
+        e.remove()
+      }
     })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
