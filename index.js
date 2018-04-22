@@ -309,6 +309,18 @@ function run (assets) {
     })
   }
 
+  function drawText (text, x, y, z) {
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, vec3.fromValues(x, y, z))
+    mat4.scale(model, model, vec3.fromValues(1, -1, 1))
+    text({
+      projection: projection,
+      view: view,
+      model: model
+    })
+  }
+
   console.time('light')
   var lights = []
   dun.children.forEach(function (p) {
@@ -360,18 +372,10 @@ function run (assets) {
       view: view
     })
 
-    // world.queryComponents([MobAI, Physics]).forEach(function (e) {
-    //   drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
-    // })
+    drawText(text, 12, 3, 12)
 
-    var model = mat4.create()
-    mat4.identity(model)
-    mat4.translate(model, model, vec3.fromValues(12, 3, 12))
-    mat4.scale(model, model, vec3.fromValues(1, -1, 1))
-    text({
-      projection: projection,
-      view: view,
-      model: model
+    world.queryComponents([MobAI, Physics]).forEach(function (e) {
+      drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
     })
   })
 }
