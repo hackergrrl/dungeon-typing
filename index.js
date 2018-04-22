@@ -14,6 +14,12 @@ var camera = {
   rot: [0, 0, 0]
 }
 
+var systems = [
+  updatePhysics,
+  updateCamera,
+  updateMobAI
+]
+
 var projection
 
 var world = nano()
@@ -42,6 +48,9 @@ function Physics () {
     y: 0,
     z: 0
   }
+}
+
+function MobAI () {
 }
 
 function CameraController () {
@@ -129,6 +138,19 @@ function isSolid (x, z) {
   return !!map.get(Math.floor(x), 1, Math.floor(z))
 }
 
+function updateMobAI (world) {
+  world.queryComponents([MobAI, Physics]).forEach(function (e) {
+    var plr = world.queryTag('player')[0]
+    var dx = plr.physics.pos.x - e.physics.pos.x
+    var dz = plr.physics.pos.z - e.physics.pos.z
+    var dist = Math.sqrt(dx*dx + dz*dz)
+    dx /= dist
+    dz /= dist
+    e.physics.vel.x += dx * 0.001
+    e.physics.vel.z += dz * 0.001
+  })
+}
+
 function updatePhysics (world) {
   world.queryComponents([Physics]).forEach(function (e) {
     // gravity
@@ -194,6 +216,15 @@ function run (assets) {
   var player = world.createEntity()
   player.addComponent(Physics)
   player.addComponent(CameraController)
+  player.addTag('player')
+
+  var foe = world.createEntity()
+  foe.addComponent(Physics)
+  foe.addComponent(MobAI)
+  foe.physics.height = 3
+  foe.physics.pos.x = 12
+  foe.physics.pos.z = 12
+  foe.physics.pos.y = 5
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
@@ -300,8 +331,7 @@ function run (assets) {
     }
     last = new Date().getTime()
 
-    updatePhysics(world)
-    updateCamera(world)
+    systems.forEach(function (s) { s(world) })
 
     projection = mat4.perspective([],
                                   Math.PI / 3,
@@ -327,6 +357,8 @@ function run (assets) {
       view: view
     })
 
-    drawBillboard(state, 12, 2.5, 12, assets.foe)
+    world.queryComponents([MobAI, Physics]).forEach(function (e) {
+      drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
+    })
   })
 }
