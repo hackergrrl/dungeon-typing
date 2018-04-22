@@ -44,6 +44,8 @@ module.exports = function (regl, text) {
       model: regl.prop('model')
     },
 
-    elements: mesh.cells
+    elements: mesh.cells,
+
+    depth: { enable: false }
   })
 }
