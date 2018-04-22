@@ -8,6 +8,7 @@ var Sky = require('./sky')
 var nano = require('nano-ecs')
 var vec3 = require('gl-vec3')
 var Billboard = require('./billboard')
+var Text = require('./text')
 
 var camera = {
   pos: [0, -2, -10],
@@ -291,6 +292,8 @@ function run (assets) {
 
   var chr = Billboard(regl, 2)
 
+  var text = Text(regl, 'MONSTER HUNGRY')
+
   function drawBillboard (state, x, y, z, texture) {
     var model = mat4.create()
     mat4.identity(model)
@@ -357,8 +360,18 @@ function run (assets) {
       view: view
     })
 
-    world.queryComponents([MobAI, Physics]).forEach(function (e) {
-      drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
+    // world.queryComponents([MobAI, Physics]).forEach(function (e) {
+    //   drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
+    // })
+
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, vec3.fromValues(12, 3, 12))
+    mat4.scale(model, model, vec3.fromValues(1, -1, 1))
+    text({
+      projection: projection,
+      view: view,
+      model: model
     })
   })
 }
