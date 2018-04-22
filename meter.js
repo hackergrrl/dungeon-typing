@@ -62,7 +62,7 @@ module.exports = function (regl, at, color) {
         pos.push([at[0] - size, y + size*2])
         pos.push([at[0] - size, y - size*2])
       }
-      if (i <= segs) {
+      if (i < segs) {
         col.push([color[0], color[1], color[2], color[3]])
         col.push([color[0], color[1], color[2], color[3]])
         col.push([color[0], color[1], color[2], color[3]])

@@ -451,6 +451,8 @@ function updateCamera (world) {
     camera.shake[1] += camera.shakeVel[1]
     camera.shake[2] += camera.shakeVel[2]
 
+    if (e.health.amount <= 0) return
+
     if (key('<up>')) {
       e.physics.vel.z -= Math.cos(camera.rot[1]) * 0.01
       e.physics.vel.x += Math.sin(camera.rot[1]) * 0.01
@@ -499,9 +501,17 @@ function run (assets) {
   player.addComponent(CameraController)
   player.addComponent(Health)
   player.addComponent(Mana)
-  player.health.init(30)
+  player.health.init(10)
   player.mana.init(12)
   player.addTag('player')
+  player.on('death', function () {
+    player.physics.height = 0.5
+    player.physics.vel.y = 1
+    player.physics.pos.y += 1
+    camera.rot[2] = Math.PI/7
+    camera.rot[0] = -Math.PI/5
+    console.log('you are remarkably dead')
+  })
 
   var foe = world.createEntity()
   foe.addComponent(Physics)
