@@ -1,13 +1,13 @@
 {
-  "name": "boxscape",
+  "name": "dungeon-typing",
   "description": "",
   "author": "Stephen Whitmore <sww@eight.net>",
   "version": "0.0.0",
   "repository": {
-    "url": "git://github.com/noffle/boxscape.git"
+    "url": "git://github.com/noffle/dungeon-typing.git"
   },
-  "homepage": "https://github.com/noffle/boxscape",
-  "bugs": "https://github.com/noffle/boxscape/issues",
+  "homepage": "https://github.com/noffle/dungeon-typing",
+  "bugs": "https://github.com/noffle/dungeon-typing/issues",
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.js",
