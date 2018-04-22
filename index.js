@@ -93,11 +93,21 @@ function ParticleEffect () {
 function Text3D () {
   this.generate = function (string) {
     this.draw = Text(regl, string)
+    this.text = string
   }
 
   this.x = this.y = this.z = 0
   this.draw = undefined
   this.expireTime = new Date().getTime() + 1500
+}
+
+function TextHolder () {
+  this.draw = undefined
+  this.text = ''
+  this.add = function (letter) {
+    this.text += letter
+    this.draw = Text(regl, this.text)
+  }
 }
 
 require('resl')({
@@ -282,6 +292,7 @@ function run (assets) {
   var foe = world.createEntity()
   foe.addComponent(Physics)
   foe.addComponent(MobAI)
+  foe.addComponent(TextHolder)
   foe.physics.height = 2
   foe.physics.pos.x = 12
   foe.physics.pos.z = 12
@@ -475,6 +486,12 @@ function run (assets) {
       view: view
     })
 
+    world.queryComponents([TextHolder]).forEach(function (e) {
+      if (e.textHolder.draw) {
+        drawText(e.textHolder.draw, e.physics.pos.x, e.physics.pos.y + 1.5, e.physics.pos.z)
+      }
+    })
+
     world.queryComponents([Text3D]).forEach(function (e) {
       drawText(e.text3D.draw, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z)
 
@@ -483,14 +500,18 @@ function run (assets) {
         return
       }
 
-      world.queryComponents([MobAI, Physics]).forEach(function (m) {
+      world.queryComponents([MobAI, Physics, TextHolder]).forEach(function (m) {
         var dx = m.physics.pos.x - e.physics.pos.x
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
         if (dist < 1) {
           m.physics.vel.x += e.physics.vel.x * 0.01
           m.physics.vel.z += e.physics.vel.z * 0.01
+
           spawnParticleHit(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
+
+          m.textHolder.add(e.text3D.text)
+
           e.remove()
         }
       })
