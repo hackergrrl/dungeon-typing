@@ -15,6 +15,10 @@ var camera = {
   rot: [0, 0, 0]
 }
 
+var lexicon = {
+  'hit': hitCommand
+}
+
 var letters = 0
 var lastLetter = 0
 
@@ -35,6 +39,21 @@ function pointLight (lpos, lightIntensity, vpos, normal) {
   var dir = vec3.sub(out, vpos, lpos)
   var dist = vec3.length(out)
   return Math.min(2.0, Math.max(0, lightIntensity / (dist*dist)))
+}
+
+function checkLexicon (plr, mob, text) {
+  var words = Object.keys(lexicon)
+
+  for (var j=0; j < words.length; j++) {
+    var word = words[j]
+    if (word == text) return lexicon[text]
+    if (word.startsWith(text)) return true
+  }
+  return false
+}
+
+function hitCommand (plr, target) {
+  console.log('BAM!')
 }
 
 // gravity-affected, bounding box vs tilemap, position
@@ -107,6 +126,13 @@ function TextHolder () {
   this.add = function (letter) {
     this.text += letter
     this.draw = Text(regl, this.text)
+  }
+  this.clear = function () {
+    this.text = ''
+    this.draw = undefined
+  }
+  this.setColor = function (col) {
+    this.draw = Text(regl, this.text, col)
   }
 }
 
@@ -511,6 +537,19 @@ function run (assets) {
           spawnParticleHit(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
 
           m.textHolder.add(e.text3D.text)
+
+          setTimeout(function () {
+            var plr = world.queryTag('player')[0]
+            var res = checkLexicon(plr, m, m.textHolder.text)
+            if (res === false) m.textHolder.clear()
+            if (typeof res === 'function') {
+              m.textHolder.setColor([0, 1, 0, 1])
+              setTimeout(function () {
+                m.textHolder.clear()
+                res(plr, m)
+              }, 300)
+            }
+          }, 500)
 
           e.remove()
         }
