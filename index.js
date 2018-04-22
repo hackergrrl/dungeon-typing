@@ -55,10 +55,40 @@ function checkLexicon (plr, mob, text) {
 }
 
 function hitCommand (plr, target) {
-  console.log('BAM!')
   camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5
   camera.shakeVel[1] = 0
   camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5
+
+  var dist = physicsDistance(plr, target)
+  if (dist <= 4) {
+    target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1
+    target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1
+  }
+}
+
+function physicsDistance (a, b) {
+  var dx = b.physics.pos.x - a.physics.pos.x
+  var dy = b.physics.pos.y - a.physics.pos.y
+  var dz = b.physics.pos.z - a.physics.pos.z
+  return Math.sqrt(dx*dx + dy*dy + dz*dz)
+}
+
+function xyzDistance (a, x, y, z) {
+  var dx = x - a.physics.pos.x
+  var dy = y - a.physics.pos.y
+  var dz = z - a.physics.pos.z
+  return Math.sqrt(dx*dx + dy*dy + dz*dz)
+}
+
+function getObjectAt (x, y, z, radius) {
+  var match
+  world.queryComponents([Physics]).forEach(function (e) {
+    var dist = xyzDistance(e, x, y, z)
+    if (dist <= radius) {
+      match = e
+    }
+  })
+  return match
 }
 
 // gravity-affected, bounding box vs tilemap, position
