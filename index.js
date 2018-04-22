@@ -123,6 +123,7 @@ function Text3D () {
 function TextHolder () {
   this.draw = undefined
   this.text = ''
+  this.alpha = 1.0
   this.add = function (letter) {
     this.text += letter
     this.draw = Text(regl, this.text)
@@ -130,9 +131,26 @@ function TextHolder () {
   this.clear = function () {
     this.text = ''
     this.draw = undefined
+    this.fade = false
+    this.alpha = 1.0
+    this.locked = false
   }
   this.setColor = function (col) {
     this.draw = Text(regl, this.text, col)
+  }
+  this.fadeOut = function () {
+    this.fade = true
+  }
+  this.update = function () {
+    if (this.fade && this.draw) {
+      this.draw.color = [
+        this.draw.color[0],
+        this.draw.color[1],
+        this.draw.color[2],
+        this.alpha
+      ]
+      this.alpha -= 0.05
+    }
   }
 }
 
@@ -516,6 +534,10 @@ function run (assets) {
       if (e.textHolder.draw) {
         drawText(e.textHolder.draw, e.physics.pos.x, e.physics.pos.y + 1.5, e.physics.pos.z)
       }
+      e.textHolder.update()
+      if (e.textHolder.alpha <= 0) {
+        e.textHolder.clear()
+      }
     })
 
     world.queryComponents([Text3D]).forEach(function (e) {
@@ -537,21 +559,29 @@ function run (assets) {
           spawnParticleHit(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
 
           m.textHolder.add(e.text3D.text)
+          e.remove()
 
-          setTimeout(function () {
-            var plr = world.queryTag('player')[0]
-            var res = checkLexicon(plr, m, m.textHolder.text)
-            if (res === false) m.textHolder.clear()
-            if (typeof res === 'function') {
-              m.textHolder.setColor([0, 1, 0, 1])
+          var plr = world.queryTag('player')[0]
+          var res = checkLexicon(plr, m, m.textHolder.text)
+          if (res) {
+            setTimeout(function () {
+              if (typeof res === 'function') {
+                m.textHolder.setColor([0, 1, 0, 1])
+                m.textHolder.fadeOut()
+                setTimeout(function () {
+                  res(plr, m)
+                }, 300)
+              }
+            }, 300)
+          } else {
+            if (!m.textHolder.locked) {
+              m.textHolder.locked = true
               setTimeout(function () {
-                m.textHolder.clear()
-                res(plr, m)
+                m.textHolder.setColor([1, 0, 0, 1])
+                m.textHolder.fadeOut()
               }, 300)
             }
-          }, 500)
-
-          e.remove()
+          }
         }
       })
     })
