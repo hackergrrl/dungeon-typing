@@ -425,6 +425,7 @@ function run (assets) {
 
       if (new Date().getTime() > e.text3D.expireTime) {
         e.remove()
+        return
       }
 
       world.queryComponents([MobAI, Physics]).forEach(function (m) {
