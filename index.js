@@ -248,8 +248,8 @@ function updateCamera (world) {
   })
 }
 
-function updateParticles () {
-  world.queryComponents([ParticleEffect]).forEach(function (e) {
+function updateParticles (world, state) {
+  world.queryComponents([ParticleEffect]).forEach(function (e, n) {
     e.particleEffect.color[3] -= 0.03
 
     for (var i=0; i < e.particleEffect.data.length; i++) {
@@ -260,6 +260,7 @@ function updateParticles () {
       mat4.identity(p.mat)
       mat4.translate(p.mat, p.mat, p.pos)
       mat4.scale(p.mat, p.mat, vec3.fromValues(p.scale, p.scale, p.scale))
+      mat4.rotateY(p.mat, p.mat, (state.tick + n * 13) * 0.1)
     }
   })
 }
@@ -444,7 +445,7 @@ function run (assets) {
       letters = 0
     }
 
-    systems.forEach(function (s) { s(world) })
+    systems.forEach(function (s) { s(world, state) })
 
     projection = mat4.perspective([],
                                   Math.PI / 3,
