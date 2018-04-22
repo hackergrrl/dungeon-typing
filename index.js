@@ -48,6 +48,34 @@ function pointLight (lpos, lightIntensity, vpos, normal) {
   return Math.min(2.0, Math.max(0, lightIntensity / (dist*dist)))
 }
 
+function canSee (a, b) {
+  var x = a.physics.pos.x
+  var z = a.physics.pos.z
+  var dx = b.physics.pos.x - a.physics.pos.x
+  var dz = b.physics.pos.z - a.physics.pos.z
+  var len = Math.sqrt(dx*dx + dz*dz)
+  dx /= len
+  dz /= len
+
+  var steps = 0
+  while (steps < 100) {
+    steps++
+
+    x += dx
+    z += dz
+    if (isSolid(x, z)) {
+      return false
+    }
+
+    var ddx = b.physics.pos.x - x
+    var ddz = b.physics.pos.z - z
+    var dist = Math.sqrt(ddx*ddx + ddz*ddz)
+    if (dist <= 1) return true
+  }
+
+  return false
+}
+
 function spawnParticleLevelUp (at) {
   var parts = world.createEntity()
   parts.addComponent(ParticleEffect)
@@ -408,6 +436,7 @@ function updateMobAI (world) {
   world.queryComponents([MobAI, Physics]).forEach(function (e) {
     var plr = world.queryTag('player')[0]
     if (plr.health.amount <= 0) return
+    if (!canSee(e, plr)) return
     var dx = plr.physics.pos.x - e.physics.pos.x
     var dz = plr.physics.pos.z - e.physics.pos.z
     var dist = Math.sqrt(dx*dx + dz*dz)
