@@ -43,6 +43,39 @@ function pointLight (lpos, lightIntensity, vpos, normal) {
   return Math.min(2.0, Math.max(0, lightIntensity / (dist*dist)))
 }
 
+function spawnParticleStrike (at) {
+  var parts = world.createEntity()
+  parts.addComponent(ParticleEffect)
+  parts.particleEffect.init({
+    count: 10,
+    pos: at,
+    speed: 0.025,
+    color: [0.8, 0.8, 0.2, 1.0]
+  })
+}
+
+function spawnParticleBlood (at) {
+  var parts = world.createEntity()
+  parts.addComponent(ParticleEffect)
+  parts.particleEffect.init({
+    count: 20,
+    pos: at,
+    speed: 0.025,
+    color: [219/255, 25/255, 25/255, 1]
+  })
+}
+
+function spawnParticleHit (at) {
+  var parts = world.createEntity()
+  parts.addComponent(ParticleEffect)
+  parts.particleEffect.init({
+    count: 7,
+    pos: at,
+    speed: 0.05,
+    color: [0.7, 0.7, 0.7, 1.0]
+  })
+}
+
 function checkLexicon (plr, mob, text) {
   var words = Object.keys(lexicon)
 
@@ -63,6 +96,8 @@ function hitCommand (plr, target) {
   if (dist <= 4) {
     target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1
     target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1
+    target.health.damage(7)
+    spawnParticleStrike(target.physics.pos)
   }
 }
 
@@ -111,7 +146,34 @@ function Physics () {
   }
 }
 
-function MobAI () {
+function MobAI (e) {
+  e.on('damage', function (amount) {
+    console.log('ow, I have', e.health.amount, 'hp left')
+  })
+  e.on('death', function () {
+    spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
+    e.remove()
+  })
+}
+
+function Health (e) {
+  this.amount = 100
+  this.max = 100
+
+  this.init = function (max) {
+    this.amount = this.max = max
+  }
+
+  this.damage = function (num) {
+    if (this.amount <= 0) return
+
+    this.amount -= num
+    if (this.amount <= 0) {
+      e.emit('death')
+    } else {
+      e.emit('damage', num)
+    }
+  }
 }
 
 function CameraController () {
@@ -382,21 +444,12 @@ function run (assets) {
   foe.addComponent(Physics)
   foe.addComponent(MobAI)
   foe.addComponent(TextHolder)
+  foe.addComponent(Health)
+  foe.health.init(10)
   foe.physics.height = 2
   foe.physics.pos.x = 12
   foe.physics.pos.z = 12
   foe.physics.pos.y = 5
-
-  function spawnParticleHit (at) {
-    var parts = world.createEntity()
-    parts.addComponent(ParticleEffect)
-    parts.particleEffect.init({
-      count: 7,
-      pos: at,
-      speed: 0.05,
-      color: [0.7, 0.7, 0.7, 1.0]
-    })
-  }
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
