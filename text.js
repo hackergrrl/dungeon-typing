@@ -3,15 +3,13 @@ var vectorize = require('vectorize-text')
 var tess = require('triangulate-polyline')
 
 module.exports = function (regl, text, color) {
-  color = color || [1, 1, 1, 1]
-
   var mesh = vectorize(text, {
     triangles: true,
     textAlign: 'center',
     textBaseline: 'middle'
   })
 
-  return regl({
+  var cmd = regl({
     frag: `
       precision mediump float;
 
@@ -35,6 +33,14 @@ module.exports = function (regl, text, color) {
       }
     `,
 
+    blend: {
+      enable: true,
+      func: {
+        src: 'src alpha',
+        dst: 'one minus src alpha'
+      }
+    },
+
     attributes: {
       pos: mesh.positions
     },
@@ -43,11 +49,13 @@ module.exports = function (regl, text, color) {
       projection: regl.prop('projection'),
       view: regl.prop('view'),
       model: regl.prop('model'),
-      color: function () { return color }
+      color: function () { return cmd.color }
     },
 
     elements: mesh.cells,
 
     // depth: { enable: false }
   })
+  cmd.color = color || [1, 1, 1, 1]
+  return cmd
 }
