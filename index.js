@@ -8,6 +8,7 @@ var nano = require('nano-ecs')
 var vec3 = require('gl-vec3')
 var Billboard = require('./billboard')
 var Text = require('./text')
+var Particle = require('./particle')
 
 var camera = {
   pos: [0, -2, -10],
@@ -75,7 +76,6 @@ function Text3D () {
   this.draw = undefined
   this.expireTime = new Date().getTime() + 1500
 }
-
 
 require('resl')({
   manifest: {
@@ -268,7 +268,7 @@ function run (assets) {
   player.physics.pos.z = (room.position[1] + room.size[1]) * 2
   player.physics.pos.y = 4
   camera.rot[1] = -Math.PI
-  // console.log(p.position, p.size)
+  console.log(player.physics.pos)
 
   map.generateGeometry()
 
@@ -380,6 +380,8 @@ function run (assets) {
     txt.physics.friction = 0.3
   }
 
+  var particle = Particle(regl)
+
   regl.frame(function (state) {
     accum += (new Date().getTime() - last)
     frames++
@@ -418,6 +420,18 @@ function run (assets) {
     map.draw({
       projection: projection,
       view: view
+    })
+
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, vec3.fromValues(8, 3, 8))
+    mat4.scale(model, model, vec3.fromValues(0.25, 0.25, 0.25))
+    mat4.rotateY(model, model, state.tick * 0.06)
+    particle({
+      projection: projection,
+      view: view,
+      model: model,
+      color: [0.8, 0.3, 0.7, 0.5]
     })
 
     world.queryComponents([Text3D]).forEach(function (e) {
