@@ -173,7 +173,6 @@ function MobAI (e) {
     txt.physics.width = 0.2
     txt.physics.depth = 0.2
     txt.physics.friction = 0.3
-    // txt.text3D.expireTime = new Date().getTime() + 2000
   })
   e.on('death', function () {
     // spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
@@ -355,10 +354,12 @@ function updateMobAI (world) {
     var dx = plr.physics.pos.x - e.physics.pos.x
     var dz = plr.physics.pos.z - e.physics.pos.z
     var dist = Math.sqrt(dx*dx + dz*dz)
-    dx /= dist
-    dz /= dist
-    e.physics.vel.x += dx * 0.002
-    e.physics.vel.z += dz * 0.002
+    if (dist > 3) {
+      dx /= dist
+      dz /= dist
+      e.physics.vel.x += dx * 0.002
+      e.physics.vel.z += dz * 0.002
+    }
   })
 }
 
