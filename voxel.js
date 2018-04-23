@@ -292,7 +292,6 @@ Voxel.prototype.addBox = function (x, y, z, tileDefName) {
     if (side === Side.Top) uv = this.tileDefs[tileDefName].top
     else if (side === Side.Bottom) uv = this.tileDefs[tileDefName].bottom
     else uv = this.tileDefs[tileDefName].side
-    if (tileDefName !== 'block1') console.log(tileDefName)
     this.uv.push([boxUv[i][0] / this.atlasWidth +  (uv[0] / this.atlasWidth),
                   boxUv[i][1] / this.atlasHeight + (uv[1] / this.atlasHeight)])
 
