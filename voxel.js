@@ -131,7 +131,17 @@ function Voxel (regl, width, height, depth, atlas) {
   this.atlasHeight = 1
   this.map = allocMap(width, height, depth)
 
+  this.tileDefs = {}
+
   this.drawCmd = makeReglElement(regl)
+}
+
+Voxel.prototype.defineTile = function (name, topUv, sideUv, bottomUv) {
+  this.tileDefs[name] = {
+    top: topUv,
+    side: sideUv,
+    bottom: bottomUv
+  }
 }
 
 Voxel.prototype.set = function (x, y, z, value) {
@@ -194,7 +204,8 @@ Voxel.prototype.generateGeometry = function () {
   for (var i=0; i < this.width; i++) {
     for (var j=0; j < this.height; j++) {
       for (var k=0; k < this.depth; k++) {
-        if (this.map[i][j][k]) this.addBox(i, j, k)
+        var tile = this.map[i][j][k]
+        if (tile) this.addBox(i, j, k, tile)
       }
     }
   }
@@ -234,10 +245,10 @@ Voxel.prototype.isSolid = function (x, y, z) {
   if (y >= this.map.height) return true
   if (z < 0 || z >= this.map.depth) return true
 
-  return this.map[x][y][z] === 1
+  return !!this.map[x][y][z]
 }
 
-Voxel.prototype.addBox = function (x, y, z) {
+Voxel.prototype.addBox = function (x, y, z, tileDefName) {
   // visibility of each of the 6 sides of the box
   var visible = new Array(6).fill()
   visible[Side.Top]    = !this.isSolid(x, y + 1, z)
@@ -277,8 +288,13 @@ Voxel.prototype.addBox = function (x, y, z) {
                         boxVertices[i][2] + z])
 
     // texture coords
-    this.uv.push([boxUv[i][0] / this.atlasWidth + (tile / this.atlasWidth),
-                  boxUv[i][1] / this.atlasHeight])
+    var uv
+    if (side === Side.Top) uv = this.tileDefs[tileDefName].top
+    else if (side === Side.Bottom) uv = this.tileDefs[tileDefName].bottom
+    else uv = this.tileDefs[tileDefName].side
+    if (tileDefName !== 'block1') console.log(tileDefName)
+    this.uv.push([boxUv[i][0] / this.atlasWidth +  (uv[0] / this.atlasWidth),
+                  boxUv[i][1] / this.atlasHeight + (uv[1] / this.atlasHeight)])
 
     // normals
     this.normal.push([boxNormal[i][0], boxNormal[i][1], boxNormal[i][2]])
