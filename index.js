@@ -23,7 +23,9 @@ var camera = {
 }
 
 var lexicon = {
-  'hit': hitCommand.bind(null, '2d3+0')
+  'hit':   hitCommand.bind(null, '2d3+0'),
+  'open':  openCommand,
+  'close': closeCommand,
 }
 
 var letters = 0
@@ -174,6 +176,22 @@ function hitCommand (dice, attacker, target) {
     }
     target.health.damage(dmg, attacker)
   }
+
+  return true
+}
+
+function openCommand (user, target) {
+  if (!target.door) return false
+  target.billboardSprite.frameX = 1
+  target.door.open = true
+  return true
+}
+
+function closeCommand (user, target) {
+  if (!target.door) return false
+  target.billboardSprite.frameX = 0
+  target.door.open = false
+  return true
 }
 
 function physicsDistance (a, b) {
@@ -203,6 +221,7 @@ function getObjectAt (x, y, z, radius) {
 
 // gravity-affected, bounding box vs tilemap, position
 function Physics () {
+  this.movable = true
   this.pos = {
     x: 0,
     y: 0,
@@ -234,6 +253,10 @@ function Player (e) {
   }
 }
 
+function Door () {
+  this.open = false
+}
+
 function MobAI (e) {
   e.on('damage', function (amount) {
     var txt = world.createEntity()
@@ -256,13 +279,16 @@ function MobAI (e) {
     if (attacker.level) {
       attacker.level.gain(e.mobAI.xp || 0)
     }
-    // spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
-    e.remove()
+    process.nextTick(function () {
+      e.remove()
+    })
   })
 }
 
 function BillboardSprite () {
   this.texture = null
+  this.frameX = 0
+  this.frameY = 0
   this.init = function (tname) {
     this.texture = tname
   }
@@ -423,6 +449,7 @@ require('resl')({
     foe: tex('foe.png'),
     chest: tex('chest.png'),
     potions: tex('potions.png'),
+    door: tex('door.png'),
   },
   onDone: run
 })
@@ -538,6 +565,12 @@ function updatePhysics (world) {
     var tz = e.physics.pos.z + e.physics.vel.z
     if (isSolid(e.physics.pos.x, tz)) {
       e.physics.vel.z *= -0.3
+    }
+
+    if (!e.physics.movable) {
+      e.physics.vel.x = 0
+      e.physics.vel.y = 0
+      e.physics.vel.z = 0
     }
 
     // newtonian physics
@@ -731,6 +764,28 @@ function createLevel (level) {
       foe.physics.pos.y = 5
       console.log('spawned mob at', x, z)
     }
+
+    room.exits.forEach(function (exit) {
+      var rot = exit[1] * 180 / Math.PI
+      var x = (room.position[0] + exit[0][0]) * 4 + 1
+      var z = (room.position[1] + exit[0][1]) * 4 + 1
+      var door = world.createEntity()
+      door.addComponent(Physics)
+      door.addComponent(Door)
+      door.addComponent(BillboardSprite)
+      door.addComponent(TextHolder)
+      door.addComponent(Health)
+      door.billboardSprite.init('door.png')
+      door.health.init(50)
+      door.physics.movable = false
+      door.physics.height = 4
+      door.physics.width = 4
+      door.physics.depth = 4
+      door.physics.pos.x = x
+      door.physics.pos.z = z
+      door.physics.pos.y = 2
+      console.log('spawned door at', x, y)
+    })
   })
 
   console.time('light')
@@ -799,12 +854,12 @@ function run (assets) {
 
   var billboard = Billboard(regl, 2, 1)
 
-  function drawBillboard (at, frameX, frameY, textureName) {
+  function drawBillboard (at, frameX, frameY, scale, textureName) {
     var tex = textures[textureName]
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, at)
-    mat4.scale(model, model, vec3.fromValues(1.0, 1.0, 1.0))
+    mat4.scale(model, model, vec3.fromValues(scale, scale, scale))
     var rot = -Math.atan2(-camera.pos[2] - at[2], -camera.pos[0] - at[0]) + Math.PI/2
     mat4.rotateY(model, model, rot)
     billboard({
@@ -908,7 +963,7 @@ function run (assets) {
     // Collisions (player text vs mobs)
     world.queryComponents([Text3D, TextProjectile]).forEach(function (e) {
       var done = false
-      world.queryComponents([MobAI, Physics, TextHolder]).forEach(function (m) {
+      world.queryComponents([Physics, TextHolder]).forEach(function (m) {
         if (done) return
         var dx = m.physics.pos.x - e.physics.pos.x
         var dz = m.physics.pos.z - e.physics.pos.z
@@ -928,11 +983,10 @@ function run (assets) {
           if (res) {
             setTimeout(function () {
               if (typeof res === 'function') {
-                m.textHolder.setColor([0, 1, 0, 1])
+                var ok = res(plr, m)
+                if (ok) m.textHolder.setColor([0, 1, 0, 1])
+                else  m.textHolder.setColor([0.5, 0.5, 0.5, 1])
                 m.textHolder.fadeOut()
-                setTimeout(function () {
-                  res(plr, m)
-                }, 100)
               }
             }, 300)
           } else {
@@ -963,13 +1017,13 @@ function run (assets) {
 
     // Draw general billboards
     world.queryComponents([BillboardSprite, Physics]).forEach(function (e) {
-      drawBillboard(vecify(e.physics.pos), 0, 0, e.billboardSprite.texture)
+      drawBillboard(vecify(e.physics.pos), e.billboardSprite.frameX, 0, 2, e.billboardSprite.texture)
     })
 
     // Draw mobs
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
       var frameX = state.tick % 70 < 35 ? 0 : 1
-      drawBillboard(vecify(e.physics.pos), frameX, 0, 'foe.png')
+      drawBillboard(vecify(e.physics.pos), frameX, 0, 1, 'foe.png')
     })
 
     // GUI meters
