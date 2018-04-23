@@ -592,7 +592,7 @@ function run (assets) {
   })
 
   // alloc + config map
-  map = new Voxel(regl, 50, 10, 50, assets.atlas)
+  map = new Voxel(regl, 50, 10, 50, textures['atlas.png'], 16, 16)
   map.defineTile('block1', [0, 0], [1, 0], [1, 0])
   map.defineTile('exit', [2, 0], [1, 0], [1, 0])
   var dun = generateLevel(25, 25)
