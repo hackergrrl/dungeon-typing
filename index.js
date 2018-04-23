@@ -557,6 +557,20 @@ function updatePhysics (world) {
     // gravity
     e.physics.vel.y -= 0.006
 
+    // door collisions
+    world.queryComponents([Door]).forEach(function (d) {
+      if (d.door.open) return
+
+      var toDoor = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+      if (vec3.length(toDoor) <= d.physics.width) {
+        vec3.normalize(toDoor, toDoor)
+        // vec3.scale(toDoor, toDoor, 1)
+        e.physics.vel.x += toDoor[0] * 0.01
+        e.physics.vel.y += toDoor[1] * 0.01
+        e.physics.vel.z += toDoor[2] * 0.01
+      }
+    })
+
     // wall collisions; test x and z separately
     var tx = e.physics.pos.x + e.physics.vel.x
     if (isSolid(tx, e.physics.pos.z)) {
