@@ -11,6 +11,8 @@ var Text = require('./text')
 var Particle = require('./particle')
 var Meter = require('./meter')
 
+var textures = {}
+
 var camera = {
   pos: [0, -2, -10],
   rot: [0, 0, 0],
@@ -232,6 +234,13 @@ function MobAI (e) {
   })
 }
 
+function BillboardSprite () {
+  this.texture = null
+  this.init = function (tname) {
+    this.texture = tname
+  }
+}
+
 function Health (e) {
   this.amount = 100
   this.max = 100
@@ -361,7 +370,6 @@ function TextHolder () {
   }
 }
 
-var textures = {}
 function tex (fn) {
   return {
     type: 'image',
@@ -387,7 +395,7 @@ require('resl')({
     atlas: tex('atlas.png'),
     foe: tex('foe.png'),
     chest: tex('chest.png'),
-    potions: tex('potions.png')
+    potions: tex('potions.png'),
   },
   onDone: run
 })
@@ -868,6 +876,10 @@ function run (assets) {
         }
       })
       e.particleEffect.draw(commands)
+    })
+
+    world.queryComponents([BillboardSprite, Physics]).forEach(function (e) {
+      drawBillboard(state, vecify(e.physics.pos), 0, 0, e.billboardSprite.texture)
     })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {

@@ -127,7 +127,8 @@ function Voxel (regl, width, height, depth, atlas) {
   this.depth = depth
 
   this.atlasTexture = atlas
-  this.atlasWidth = 2
+  this.atlasWidth = 4
+  this.atlasHeight = 1
   this.map = allocMap(width, height, depth)
 
   this.drawCmd = makeReglElement(regl)
@@ -277,7 +278,7 @@ Voxel.prototype.addBox = function (x, y, z) {
 
     // texture coords
     this.uv.push([boxUv[i][0] / this.atlasWidth + (tile / this.atlasWidth),
-                  boxUv[i][1]])
+                  boxUv[i][1] / this.atlasHeight])
 
     // normals
     this.normal.push([boxNormal[i][0], boxNormal[i][1], boxNormal[i][2]])
