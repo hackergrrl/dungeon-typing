@@ -202,6 +202,9 @@ function Physics () {
   }
 }
 
+function Chest () {
+}
+
 function MobAI (e) {
   e.on('damage', function (amount) {
     console.log('ow, I have', e.health.amount, 'hp left')
@@ -362,30 +365,26 @@ function TextHolder () {
   }
 }
 
+function tex (fn) {
+  return {
+    type: 'image',
+    src: 'assets/' + fn,
+    parser: function (data) {
+      return regl.texture({
+        data: data,
+        min: 'nearest',
+        mag: 'nearest'
+      })
+    }
+  }
+}
+
 require('resl')({
   manifest: {
-    atlas: {
-      type: 'image',
-      src: 'atlas.png',
-      parser: function (data) {
-        return regl.texture({
-          data: data,
-          min: 'nearest',
-          mag: 'nearest'
-        })
-      }
-    },
-    foe: {
-      type: 'image',
-      src: 'assets/foe.png',
-      parser: function (data) {
-        return regl.texture({
-          data: data,
-          min: 'nearest',
-          mag: 'nearest'
-        })
-      }
-    }
+    atlas: tex('atlas.png'),
+    foe: tex('foe.png'),
+    chest: tex('chest.png'),
+    potions: tex('potions.png')
   },
 
   onDone: run
@@ -661,7 +660,7 @@ function run (assets) {
   var mpMeter = Meter(regl, [0.83, 0.8], [0, 0,    1, 0.75])
   var xpMeter = Meter(regl, [0.91, 0.8], [0, 0.65, 0, 0.5])
 
-  var chr = Billboard(regl, 2)
+  var billboard = Billboard(regl, 2, 1)
 
   function drawBillboard (state, x, y, z, texture) {
     var model = mat4.create()
@@ -670,9 +669,10 @@ function run (assets) {
     mat4.scale(model, model, vec3.fromValues(1.0, 1.0, 1.0))
     var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
     mat4.rotateY(model, model, rot)
-    chr({
+    billboard({
       model: model,
-      frame: state.tick % 70 < 35 ? 0 : 0.5,
+      frameX: state.tick % 70 < 35 ? 0 : 0.5,
+      frameY: 0,
       view: view,
       texture: texture
     })
@@ -742,7 +742,7 @@ function run (assets) {
     accum += (new Date().getTime() - last)
     frames++
     if (accum >= 1000) {
-      console.log(''+frames, 'FPS')
+      // console.log(''+frames, 'FPS')
       frames = 0
       accum = 0
     }
