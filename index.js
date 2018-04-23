@@ -19,7 +19,7 @@ var camera = {
 }
 
 var lexicon = {
-  'hit': hitCommand.bind(null, 7)
+  'hit': hitCommand.bind(null, 4)
 }
 
 var letters = 0
@@ -207,8 +207,6 @@ function Chest () {
 
 function MobAI (e) {
   e.on('damage', function (amount) {
-    console.log('ow, I have', e.health.amount, 'hp left')
-
     var txt = world.createEntity()
     txt.addComponent(Text3D)
     txt.addComponent(Physics)
@@ -429,7 +427,7 @@ function isSolid (x, z) {
   z /= 2
   z += 0.5
   x += 0.5
-  if (x <= 0 || z <= 0 || x >= map.width || z >= map.depth) {
+  if (x < 0 || z < 0 || x >= map.width || z >= map.depth) {
     return true
   }
   return !!map.get(Math.floor(x), 1, Math.floor(z))
@@ -579,23 +577,11 @@ function run (assets) {
   })
   player.on('level-up', function () {
     spawnParticleLevelUp(vecify(player.physics.pos))
-    player.health.max = Math.floor(player.health.max * 1.25)
+    player.health.max = Math.floor(player.health.max * 1.1)
     player.health.amount = player.health.max
-    player.mana.max = Math.floor(player.mana.max * 1.25)
+    player.mana.max = Math.floor(player.mana.max * 1.1)
     player.mana.amount = player.mana.max
   })
-
-  var foe = world.createEntity()
-  foe.addComponent(Physics)
-  foe.addComponent(MobAI)
-  foe.addComponent(TextHolder)
-  foe.addComponent(Health)
-  foe.health.init(10)
-  foe.mobAI.xp = 60
-  foe.physics.height = 2
-  foe.physics.pos.x = 12
-  foe.physics.pos.z = 12
-  foe.physics.pos.y = 5
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
@@ -651,6 +637,34 @@ function run (assets) {
         }
       }
     }
+  }
+
+  function pickFreeTile () {
+    var tries = 150
+    while (tries > 0) {
+      tries--
+      var x = Math.floor(Math.random() * map.width)
+      var z = Math.floor(Math.random() * map.depth)
+      if (!isSolid(x, z)) {
+        return [x, z]
+      }
+    }
+  }
+
+  for (var i=0; i < 10; i++) {
+    var at = pickFreeTile()
+    var foe = world.createEntity()
+    foe.addComponent(Physics)
+    foe.addComponent(MobAI)
+    foe.addComponent(TextHolder)
+    foe.addComponent(Health)
+    foe.health.init(10)
+    foe.mobAI.xp = 8
+    foe.physics.height = 2
+    foe.physics.pos.x = at[0]
+    foe.physics.pos.z = at[1]
+    foe.physics.pos.y = 5
+    console.log('spawned monster at', at)
   }
 
   var view = mat4.lookAt([],
@@ -803,7 +817,9 @@ function run (assets) {
     })
 
     world.queryComponents([Text3D, TextProjectile]).forEach(function (e) {
+      var done = false
       world.queryComponents([MobAI, Physics, TextHolder]).forEach(function (m) {
+        if (done) return
         var dx = m.physics.pos.x - e.physics.pos.x
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
@@ -815,6 +831,7 @@ function run (assets) {
 
           m.textHolder.add(e.text3D.text)
           e.remove()
+          done = true
 
           var plr = world.queryTag('player')[0]
           var res = checkLexicon(plr, m, m.textHolder.text)
