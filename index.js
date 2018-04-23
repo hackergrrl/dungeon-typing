@@ -258,7 +258,6 @@ function Chest () {
 function Player (e) {
   this.update = function () {
     if (getTileAt(e.physics.pos.x, 0, e.physics.pos.z) === 'exit') {
-      console.log('EXIT!!!!')
       currentLevel++
       createLevel(currentLevel)
     }
@@ -759,14 +758,12 @@ function createLevel (level) {
   player.physics.pos.z = (room.position[1] + room.size[1]) * 2
   player.physics.pos.y = 4
   camera.rot[1] = -Math.PI
-  console.log(player.physics.pos)
 
   while (true) {
     if (room.room_size[0] <= 1 || room.room_size[1] <= 1) continue
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
     var ex = (room.position[0] + Math.floor(room.size[0]/2)) * 2
     var ez = (room.position[1] + Math.floor(room.size[1]/2)) * 2
-    console.log('exit @', ex, ez)
     map.set(ex, 0, ez, 'exit')
     break
   }
@@ -804,7 +801,6 @@ function createLevel (level) {
       foe.physics.pos.x = x
       foe.physics.pos.z = z
       foe.physics.pos.y = 5
-      // console.log('spawned mob at', x, z)
     }
 
     room.exits.forEach(function (exit) {
@@ -827,7 +823,6 @@ function createLevel (level) {
       door.physics.pos.x = x
       door.physics.pos.z = z
       door.physics.pos.y = 2
-      // console.log('spawned door at', x, y)
     })
   })
 
@@ -842,7 +837,6 @@ function createLevel (level) {
       },
       intensity: Math.random() * 5 + 4
     })
-    // console.log('spawned light at', lights[lights.length-1].pos)
   })
   updateLights(lights)
   console.timeEnd('light')
