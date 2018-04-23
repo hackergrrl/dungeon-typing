@@ -13,6 +13,8 @@ var Meter = require('./meter')
 
 var textures = {}
 
+var currentLevel = 1
+
 var camera = {
   pos: [0, -2, -10],
   rot: [0, 0, 0],
@@ -36,7 +38,7 @@ var systems = [
 
 var projection
 
-var world = nano()
+var world
 var map
 
 function vecify (v) {
@@ -224,8 +226,10 @@ function Chest () {
 
 function Player (e) {
   this.update = function () {
-    if (getTileAt(e.physics.pos.x, 1, e.physics.pos.z) === 'exit') {
-      console.log('EXIT')
+    if (getTileAt(e.physics.pos.x, 0, e.physics.pos.z) === 'exit') {
+      console.log('EXIT!!!!')
+      currentLevel++
+      createLevel(currentLevel)
     }
   }
 }
@@ -423,6 +427,35 @@ require('resl')({
   onDone: run
 })
 
+document.body.onkeypress = function (ev) {
+  var plr = world.queryTag('player')[0]
+  if (plr.health.amount <= 0) return
+
+  var k = ev.key
+  var txt = world.createEntity()
+  txt.addComponent(Text3D)
+  txt.addComponent(TextProjectile)
+  txt.addComponent(Physics)
+  txt.text3D.generate(k)
+
+  letters++
+  lastLetter = new Date().getTime()
+
+  var yrot = camera.rot[1] - 0.05 + letters*0.01
+  txt.physics.pos.x = plr.physics.pos.x + Math.sin(yrot)
+  txt.physics.pos.z = plr.physics.pos.z - Math.cos(yrot)
+  txt.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.1
+  txt.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.1
+  txt.physics.pos.y = 3
+  txt.physics.vel.x = plr.physics.vel.x + Math.sin(yrot) * 0.8
+  txt.physics.vel.z = plr.physics.vel.z - Math.cos(yrot) * 0.8
+  txt.physics.vel.y = plr.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
+  txt.physics.height = 0.8
+  txt.physics.width = 0.2
+  txt.physics.depth = 0.2
+  txt.physics.friction = 0.3
+}
+
 function generateLevel (w, h) {
   var dun = new dungeon({
     size: [w, h],
@@ -485,7 +518,7 @@ function updateMobAI (world) {
       e.physics.vel.z += dz * 0.002
     } else {
       if (!e.mobAI.nextAttack || e.mobAI.nextAttack <= new Date().getTime()) {
-        hitCommand('1d4+0', e, plr)
+        hitCommand('1d2+0', e, plr)
         e.mobAI.nextAttack = new Date().getTime() + 1500
       }
     }
@@ -590,41 +623,47 @@ function updateParticles (world, state) {
   })
 }
 
-function run (assets) {
-  var accum = 0
-  var frames = 0
-  var last = new Date().getTime()
+function createLevel (level) {
+  if (!world) world = nano()
+  var player = world.queryTag('player')[0]
 
-  var player = world.createEntity()
-  player.addComponent(Player)
-  player.addComponent(Physics)
-  player.addComponent(CameraController)
-  player.addComponent(Health)
-  player.addComponent(Level)
-  player.addComponent(Mana)
-  player.health.init(30)
-  player.mana.init(12)
-  player.addTag('player')
-  player.on('death', function () {
-    player.physics.height = 0.5
-    player.physics.vel.y = 1
-    player.physics.pos.y += 1
-    camera.rot[2] = Math.PI/7
-    camera.rot[0] = -Math.PI/5
-    console.log('you are remarkably dead')
+  world._entities.forEach(function (e) {
+    if (e !== player) e.remove()
   })
-  player.on('level-up', function () {
-    spawnParticleLevelUp(vecify(player.physics.pos))
-    player.health.max = Math.floor(player.health.max * 1.1)
-    player.health.amount = player.health.max
-    player.mana.max = Math.floor(player.mana.max * 1.1)
-    player.mana.amount = player.mana.max
-  })
+
+  if (!player) {
+    player = world.createEntity()
+    player.addComponent(Player)
+    player.addComponent(Physics)
+    player.addComponent(CameraController)
+    player.addComponent(Health)
+    player.addComponent(Level)
+    player.addComponent(Mana)
+    player.health.init(30)
+    player.mana.init(12)
+    player.addTag('player')
+    player.on('death', function () {
+      player.physics.height = 0.5
+      player.physics.vel.y = 1
+      player.physics.pos.y += 1
+      camera.rot[2] = Math.PI/7
+      camera.rot[0] = -Math.PI/5
+      console.log('you are remarkably dead')
+    })
+    player.on('level-up', function () {
+      spawnParticleLevelUp(vecify(player.physics.pos))
+      player.health.max = Math.floor(player.health.max * 1.1)
+      player.health.amount = player.health.max
+      player.mana.max = Math.floor(player.mana.max * 1.1)
+      player.mana.amount = player.mana.max
+    })
+  }
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, textures['atlas.png'], 16, 16)
-  map.defineTile('block1', [0, 0], [1, 0], [1, 0])
-  map.defineTile('exit', [2, 0], [1, 0], [1, 0])
+  var v = level - 1
+  map.defineTile('block1', [0, v], [1, v], [1, v])
+  map.defineTile('exit', [2, 0], [1, v], [1, v])
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
@@ -641,6 +680,7 @@ function run (assets) {
   }
 
   var room = dun.initial_room
+  var player = world.queryTag('player')[0]
   player.physics.pos.x = (room.position[0] + room.size[0]) * 2
   player.physics.pos.z = (room.position[1] + room.size[1]) * 2
   player.physics.pos.y = 4
@@ -650,8 +690,8 @@ function run (assets) {
   while (true) {
     if (room.room_size[0] <= 1 || room.room_size[1] <= 1) continue
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
-    var ex = (room.position[0] + Math.floor(room.size[0]/2 - 1)) * 2
-    var ez = (room.position[1] + Math.floor(room.size[1]/2 - 1)) * 2
+    var ex = (room.position[0] + Math.floor(room.size[0]/2)) * 2
+    var ez = (room.position[1] + Math.floor(room.size[1]/2)) * 2
     console.log('exit @', ex, ez)
     map.set(ex, 0, ez, 'exit')
     break
@@ -666,34 +706,6 @@ function run (assets) {
         map.lightBoxSet(i, k, j, function (pos, normal) {
           return [0.1, 0.1, 0.1]
         })
-      }
-    }
-  }
-
-  function updateLights (lights) {
-    for (var i=0; i < map.width; i++) {
-      for (var j=0; j < map.depth; j++) {
-        for (var k=0; k < map.height; k++) {
-          lights.forEach(function (light) {
-            var lightPos = vec3.fromValues(light.pos.x, light.pos.y, light.pos.z)
-            map.lightBoxAdd(i, k, j, function (pos, normal) {
-              var br = pointLight(lightPos, light.intensity, pos, normal)
-              return [br * 226/255, br * 188/255, br * 134/255]
-            })
-          })
-        }
-      }
-    }
-  }
-
-  function pickFreeTile () {
-    var tries = 150
-    while (tries > 0) {
-      tries--
-      var x = Math.floor(Math.random() * map.width)
-      var z = Math.floor(Math.random() * map.depth)
-      if (!isSolid(x, z)) {
-        return [x, z]
       }
     }
   }
@@ -720,6 +732,59 @@ function run (assets) {
     }
   })
 
+  console.time('light')
+  var lights = []
+  dun.children.forEach(function (p) {
+    lights.push({
+      pos: {
+        x: (p.position[0] + p.room_size[0]/2) * 2,
+        y: 3,
+        z: (p.position[1] + p.room_size[1]/2) * 2
+      },
+      intensity: Math.random() * 5 + 4
+    })
+    // console.log('spawned light at', lights[lights.length-1].pos)
+  })
+  updateLights(lights)
+  console.timeEnd('light')
+
+}
+
+function updateLights (lights) {
+  for (var i=0; i < map.width; i++) {
+    for (var j=0; j < map.depth; j++) {
+      for (var k=0; k < map.height; k++) {
+        lights.forEach(function (light) {
+          var lightPos = vec3.fromValues(light.pos.x, light.pos.y, light.pos.z)
+          map.lightBoxAdd(i, k, j, function (pos, normal) {
+            var br = pointLight(lightPos, light.intensity, pos, normal)
+            return [br * 226/255, br * 188/255, br * 134/255]
+          })
+        })
+      }
+    }
+  }
+}
+
+function pickFreeTile () {
+  var tries = 150
+  while (tries > 0) {
+    tries--
+    var x = Math.floor(Math.random() * map.width)
+    var z = Math.floor(Math.random() * map.depth)
+    if (!isSolid(x, z)) {
+      return [x, z]
+    }
+  }
+}
+
+function run (assets) {
+  var accum = 0
+  var frames = 0
+  var last = new Date().getTime()
+
+  createLevel(1)
+
   var view = mat4.lookAt([],
                         [0, 0, -30],
                         [0, 0.0, 0],
@@ -733,7 +798,7 @@ function run (assets) {
 
   var billboard = Billboard(regl, 2, 1)
 
-  function drawBillboard (state, at, frameX, frameY, textureName) {
+  function drawBillboard (at, frameX, frameY, textureName) {
     var tex = textures[textureName]
     var model = mat4.create()
     mat4.identity(model)
@@ -764,54 +829,10 @@ function run (assets) {
     })
   }
 
-  console.time('light')
-  var lights = []
-  dun.children.forEach(function (p) {
-    lights.push({
-      pos: {
-        x: (p.position[0] + p.room_size[0]/2) * 2,
-        y: 3,
-        z: (p.position[1] + p.room_size[1]/2) * 2
-      },
-      intensity: Math.random() * 5 + 4
-    })
-    // console.log('spawned light at', lights[lights.length-1].pos)
-  })
-  updateLights(lights)
-  console.timeEnd('light')
-
-  document.body.onkeypress = function (ev) {
-    var plr = world.queryTag('player')[0]
-    if (plr.health.amount <= 0) return
-
-    var k = ev.key
-    var txt = world.createEntity()
-    txt.addComponent(Text3D)
-    txt.addComponent(TextProjectile)
-    txt.addComponent(Physics)
-    txt.text3D.generate(k)
-
-    letters++
-    lastLetter = new Date().getTime()
-
-    var yrot = camera.rot[1] - 0.05 + letters*0.01
-    txt.physics.pos.x = plr.physics.pos.x + Math.sin(yrot)
-    txt.physics.pos.z = plr.physics.pos.z - Math.cos(yrot)
-    txt.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.1
-    txt.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.1
-    txt.physics.pos.y = 3
-    txt.physics.vel.x = plr.physics.vel.x + Math.sin(yrot) * 0.8
-    txt.physics.vel.z = plr.physics.vel.z - Math.cos(yrot) * 0.8
-    txt.physics.vel.y = plr.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
-    txt.physics.height = 0.8
-    txt.physics.width = 0.2
-    txt.physics.depth = 0.2
-    txt.physics.friction = 0.3
-  }
-
   var particle = Particle(regl)
 
   regl.frame(function (state) {
+    // fps
     accum += (new Date().getTime() - last)
     frames++
     if (accum >= 1000) {
@@ -821,10 +842,12 @@ function run (assets) {
     }
     last = new Date().getTime()
 
+    // letter accumulator
     if (new Date().getTime() - lastLetter > 400) {
       letters = 0
     }
 
+    // Update all systems
     systems.forEach(function (s) { s(world, state) })
 
     projection = mat4.perspective([],
@@ -833,28 +856,34 @@ function run (assets) {
                                   0.01,
                                   1000)
 
+    // Sync camera to view matrix
     mat4.identity(view)
     mat4.rotateX(view, view, camera.rot[0])
     mat4.rotateY(view, view, camera.rot[1])
     mat4.rotateZ(view, view, camera.rot[2])
     mat4.translate(view, view, camera.pos)
 
+    // Clear screen
     regl.clear({
       color: [0, 0, 0, 1],
       depth: 1
     })
 
+    // Draw sky bg
     sky()
 
+    // Draw voxel world
     map.draw({
       projection: projection,
       view: view
     })
 
+    // Player logic
     world.queryComponents([Player]).forEach(function (e) {
       e.player.update()
     })
 
+    // Draw text over targets
     world.queryComponents([TextHolder]).forEach(function (e) {
       if (e.textHolder.draw) {
         drawText(e.textHolder.draw, e.physics.pos.x, e.physics.pos.y + 1.5, e.physics.pos.z)
@@ -865,6 +894,7 @@ function run (assets) {
       }
     })
 
+    // Draw player letter-projectiles
     world.queryComponents([Text3D]).forEach(function (e) {
       drawText(e.text3D.draw, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z)
 
@@ -874,6 +904,7 @@ function run (assets) {
       }
     })
 
+    // Collisions (player text vs mobs)
     world.queryComponents([Text3D, TextProjectile]).forEach(function (e) {
       var done = false
       world.queryComponents([MobAI, Physics, TextHolder]).forEach(function (m) {
@@ -916,6 +947,7 @@ function run (assets) {
       })
     })
 
+    // Draw particle effects
     world.queryComponents([ParticleEffect]).forEach(function (e) {
       var commands = e.particleEffect.data.map(function (d) {
         return {
@@ -928,15 +960,18 @@ function run (assets) {
       e.particleEffect.draw(commands)
     })
 
+    // Draw general billboards
     world.queryComponents([BillboardSprite, Physics]).forEach(function (e) {
-      drawBillboard(state, vecify(e.physics.pos), 0, 0, e.billboardSprite.texture)
+      drawBillboard(vecify(e.physics.pos), 0, 0, e.billboardSprite.texture)
     })
 
+    // Draw mobs
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
       var frameX = state.tick % 70 < 35 ? 0 : 1
-      drawBillboard(state, vecify(e.physics.pos), frameX, 0, 'foe.png')
+      drawBillboard(vecify(e.physics.pos), frameX, 0, 'foe.png')
     })
 
+    // GUI meters
     var plr = world.queryTag('player')[0]
     var hp = plr.health.amount / plr.health.max
     var mp = plr.mana.amount / plr.mana.max
