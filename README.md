@@ -1,3 +1,11 @@
+# Dungeon Typist
+
+## Play
+
+http://eight45.net:8000/dungeon-typist
+
+## Build & Play Locally
+
 ```
 git clone git@github.com:noffle/dungeon-typing
 cd dungeon-typing
