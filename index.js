@@ -142,8 +142,6 @@ function rollDice (str) {
   var sides = Number(str.split('+')[0].split('d')[1])
   var add = Number(str.split('+')[1])
 
-  console.log('dice', rolls, sides, add)
-
   var res = add
   for (var i=0; i < rolls; i++) {
     res += Math.floor(Math.random() * sides) + 1
@@ -700,11 +698,10 @@ function run (assets) {
     }
   }
 
-  console.log('num rooms', dun.children.length)
   dun.children.forEach(function (room) {
     if (room.id === dun.initial_room.id) return
 
-    var numFoes = Math.max(0, Math.floor(Math.random() * 4) - 1)
+    var numFoes = Math.max(0, Math.floor(Math.random() * 5) - 1)
     for (var i=0; i < numFoes; i++) {
       var x = (room.position[0] + (Math.random() * (room.room_size[0]-2)) + 1) * 2
       var z = (room.position[1] + (Math.random() * (room.room_size[1]-2)) + 1) * 2
