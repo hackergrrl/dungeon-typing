@@ -77,8 +77,9 @@ function canSee (a, b) {
 
     for (var i=0; i < doors.length; i++) {
       var d = doors[i]
-      var dist = xyzDistance(d, x, 1, z)
-      if (dist <= d.physics.width) return false
+      if (d.door.open) continue
+      var dist = xyzDistance(d, x, 2, z)
+      if (dist <= d.physics.width/2) return false
     }
 
     var ddx = b.physics.pos.x - x
