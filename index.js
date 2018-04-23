@@ -11,6 +11,9 @@ var Text = require('./text')
 var Particle = require('./particle')
 var Meter = require('./meter')
 
+
+var tick = 0
+
 var textures = {}
 
 var currentLevel = 1
@@ -192,7 +195,6 @@ function hitCommand (dice, attacker, target) {
 function openCommand (user, target) {
   if (!target.door || target.door.open) return false
   target.billboardSprite.frameX = 1
-  console.log('open', target.id)
   target.door.open = true
   return true
 }
@@ -299,6 +301,7 @@ function BillboardSprite () {
   this.texture = null
   this.frameX = 0
   this.frameY = 0
+  this.scale = 1
   this.init = function (tname) {
     this.texture = tname
   }
@@ -542,6 +545,8 @@ function isSolid (x, z) {
 
 function updateMobAI (world) {
   world.queryComponents([MobAI, Physics]).forEach(function (e) {
+    e.billboardSprite.frameX = tick % 70 < 35 ? 0 : 1
+
     var plr = world.queryTag('player')[0]
     if (plr.health.amount <= 0) return
     if (!canSee(e, plr)) return
@@ -788,9 +793,11 @@ function createLevel (level) {
       var z = (room.position[1] + (Math.random() * (room.room_size[1]-1)) + 1) * 4
       var foe = world.createEntity()
       foe.addComponent(Physics)
+      foe.addComponent(BillboardSprite)
       foe.addComponent(MobAI)
       foe.addComponent(TextHolder)
       foe.addComponent(Health)
+      foe.billboardSprite.init('foe.png')
       foe.health.init(10)
       foe.mobAI.xp = 8
       foe.physics.height = 2
@@ -811,6 +818,7 @@ function createLevel (level) {
       door.addComponent(TextHolder)
       door.addComponent(Health)
       door.billboardSprite.init('door.png')
+      door.billboardSprite.scale = 2
       door.health.init(50)
       door.physics.movable = false
       door.physics.height = 4
@@ -923,6 +931,8 @@ function run (assets) {
   var particle = Particle(regl)
 
   regl.frame(function (state) {
+    tick = state.tick
+
     // fps
     accum += (new Date().getTime() - last)
     frames++
@@ -1050,15 +1060,9 @@ function run (assets) {
       e.particleEffect.draw(commands)
     })
 
-    // Draw general billboards
+    // Draw billboard sprites
     world.queryComponents([BillboardSprite, Physics]).forEach(function (e) {
-      drawBillboard(vecify(e.physics.pos), e.billboardSprite.frameX, 0, 2, e.billboardSprite.texture)
-    })
-
-    // Draw mobs
-    world.queryComponents([MobAI, Physics]).forEach(function (e) {
-      var frameX = state.tick % 70 < 35 ? 0 : 1
-      drawBillboard(vecify(e.physics.pos), frameX, 0, 1, 'foe.png')
+      drawBillboard(vecify(e.physics.pos), e.billboardSprite.frameX, 0, e.billboardSprite.scale, e.billboardSprite.texture)
     })
 
     // GUI meters
