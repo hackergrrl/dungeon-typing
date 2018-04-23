@@ -804,7 +804,7 @@ function createLevel (level) {
       foe.physics.pos.x = x
       foe.physics.pos.z = z
       foe.physics.pos.y = 5
-      console.log('spawned mob at', x, z)
+      // console.log('spawned mob at', x, z)
     }
 
     room.exits.forEach(function (exit) {
@@ -827,7 +827,7 @@ function createLevel (level) {
       door.physics.pos.x = x
       door.physics.pos.z = z
       door.physics.pos.y = 2
-      console.log('spawned door at', x, y)
+      // console.log('spawned door at', x, y)
     })
   })
 
