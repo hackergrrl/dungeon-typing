@@ -968,7 +968,7 @@ function run (assets) {
         var dx = m.physics.pos.x - e.physics.pos.x
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
-        if (dist < 1) {
+        if (dist < m.physics.width/2) {
           m.physics.vel.x += e.physics.vel.x * 0.01
           m.physics.vel.z += e.physics.vel.z * 0.01
 
