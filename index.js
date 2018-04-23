@@ -207,6 +207,14 @@ function Physics () {
 function Chest () {
 }
 
+function Player (e) {
+  this.update = function () {
+    if (getTileAt(e.physics.pos.x, 1, e.physics.pos.z) === 'exit') {
+      console.log('EXIT')
+    }
+  }
+}
+
 function MobAI (e) {
   e.on('damage', function (amount) {
     var txt = world.createEntity()
@@ -430,15 +438,21 @@ function generateLevel (w, h) {
   return dun
 }
 
-function isSolid (x, z) {
+function getTileAt (x, y, z) {
   x /= 2
+  y /= 2
   z /= 2
   z += 0.5
+  y += 0.5
   x += 0.5
   if (x < 0 || z < 0 || x >= map.width || z >= map.depth) {
-    return true
+    return null
   }
-  return !!map.get(Math.floor(x), 1, Math.floor(z))
+  return map.get(Math.floor(x), Math.floor(y), Math.floor(z))
+}
+
+function isSolid (x, z) {
+  return !!getTileAt(x, 2, z)
 }
 
 function updateMobAI (world) {
@@ -567,6 +581,7 @@ function run (assets) {
   var last = new Date().getTime()
 
   var player = world.createEntity()
+  player.addComponent(Player)
   player.addComponent(Physics)
   player.addComponent(CameraController)
   player.addComponent(Health)
@@ -622,6 +637,7 @@ function run (assets) {
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
     var ex = (room.position[0] + Math.floor(room.size[0]/2 - 1)) * 2
     var ez = (room.position[1] + Math.floor(room.size[1]/2 - 1)) * 2
+    console.log('exit @', ex, ez)
     map.set(ex, 0, ez, 'exit')
     break
   }
@@ -819,6 +835,10 @@ function run (assets) {
     map.draw({
       projection: projection,
       view: view
+    })
+
+    world.queryComponents([Player]).forEach(function (e) {
+      e.player.update()
     })
 
     world.queryComponents([TextHolder]).forEach(function (e) {
