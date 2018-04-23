@@ -659,21 +659,28 @@ function run (assets) {
     }
   }
 
-  for (var i=0; i < 10; i++) {
-    var at = pickFreeTile()
-    var foe = world.createEntity()
-    foe.addComponent(Physics)
-    foe.addComponent(MobAI)
-    foe.addComponent(TextHolder)
-    foe.addComponent(Health)
-    foe.health.init(10)
-    foe.mobAI.xp = 8
-    foe.physics.height = 2
-    foe.physics.pos.x = at[0]
-    foe.physics.pos.z = at[1]
-    foe.physics.pos.y = 5
-    console.log('spawned monster at', at)
-  }
+  console.log('num rooms', dun.children.length)
+  dun.children.forEach(function (room) {
+    if (room.id === dun.initial_room.id) return
+
+    var numFoes = Math.max(0, Math.floor(Math.random() * 4) - 1)
+    for (var i=0; i < numFoes; i++) {
+      var x = (room.position[0] + (Math.random() * (room.room_size[0]-2)) + 1) * 2
+      var z = (room.position[1] + (Math.random() * (room.room_size[1]-2)) + 1) * 2
+      var foe = world.createEntity()
+      foe.addComponent(Physics)
+      foe.addComponent(MobAI)
+      foe.addComponent(TextHolder)
+      foe.addComponent(Health)
+      foe.health.init(10)
+      foe.mobAI.xp = 8
+      foe.physics.height = 2
+      foe.physics.pos.x = x * 2
+      foe.physics.pos.z = z * 2
+      foe.physics.pos.y = 5
+      console.log('spawned mob at', x, z)
+    }
+  })
 
   var view = mat4.lookAt([],
                         [0, 0, -30],
@@ -730,6 +737,7 @@ function run (assets) {
       },
       intensity: Math.random() * 5 + 4
     })
+    // console.log('spawned light at', lights[lights.length-1].pos)
   })
   updateLights(lights)
   console.timeEnd('light')
