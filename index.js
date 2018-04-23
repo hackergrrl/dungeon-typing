@@ -21,7 +21,7 @@ var camera = {
 }
 
 var lexicon = {
-  'hit': hitCommand.bind(null, 4)
+  'hit': hitCommand.bind(null, '2d3+0')
 }
 
 var letters = 0
@@ -137,7 +137,24 @@ function checkLexicon (plr, mob, text) {
   return false
 }
 
-function hitCommand (dmg, attacker, target) {
+function rollDice (str) {
+  var rolls = Number(str.split('d')[0])
+  var sides = Number(str.split('+')[0].split('d')[1])
+  var add = Number(str.split('+')[1])
+
+  console.log('dice', rolls, sides, add)
+
+  var res = add
+  for (var i=0; i < rolls; i++) {
+    res += Math.floor(Math.random() * sides) + 1
+  }
+
+  return res
+}
+
+function hitCommand (dice, attacker, target) {
+  var dmg = rollDice(dice)
+
   var player = world.queryTag('player')[0]
   var mult = 1
   if (attacker !== player) mult = -0.5
@@ -470,7 +487,7 @@ function updateMobAI (world) {
       e.physics.vel.z += dz * 0.002
     } else {
       if (!e.mobAI.nextAttack || e.mobAI.nextAttack <= new Date().getTime()) {
-        hitCommand(2, e, plr)
+        hitCommand('1d4+0', e, plr)
         e.mobAI.nextAttack = new Date().getTime() + 1500
       }
     }
