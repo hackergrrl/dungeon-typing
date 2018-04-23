@@ -112,7 +112,7 @@ function makeReglElement (regl) {
   })
 }
 
-function Voxel (regl, width, height, depth, atlas) {
+function Voxel (regl, width, height, depth, atlas, tileTextureWidth, tileTextureHeight) {
   this.position = []
   this.uv = []
   this.normal = []
@@ -127,8 +127,8 @@ function Voxel (regl, width, height, depth, atlas) {
   this.depth = depth
 
   this.atlasTexture = atlas
-  this.atlasWidth = 4
-  this.atlasHeight = 1
+  this.atlasWidth = atlas.width / tileTextureWidth
+  this.atlasHeight = atlas.width / tileTextureHeight
   this.map = allocMap(width, height, depth)
 
   this.tileDefs = {}
@@ -214,7 +214,7 @@ Voxel.prototype.generateGeometry = function () {
 
 Voxel.prototype.draw = function (opts) {
   if (!opts) opts = {}
-  opts.texture = this.atlasTexture,
+  opts.texture = this.atlasTexture.texture,
   opts.elements = this.elements,
   opts.positions = this.position,
   opts.uvs = this.uv,
