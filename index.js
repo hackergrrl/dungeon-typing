@@ -627,8 +627,9 @@ function createLevel (level) {
   if (!world) world = nano()
   var player = world.queryTag('player')[0]
 
-  world._entities.forEach(function (e) {
-    if (e !== player) e.remove()
+  var mobs = world.queryComponents([MobAI]).slice()
+  mobs.forEach(function (e) {
+    e.remove()
   })
 
   if (!player) {
@@ -715,8 +716,8 @@ function createLevel (level) {
 
     var numFoes = Math.max(0, Math.floor(Math.random() * 5) - 1)
     for (var i=0; i < numFoes; i++) {
-      var x = (room.position[0] + (Math.random() * (room.room_size[0]-2)) + 1) * 2
-      var z = (room.position[1] + (Math.random() * (room.room_size[1]-2)) + 1) * 2
+      var x = (room.position[0] + (Math.random() * (room.room_size[0]-1)) + 1) * 4
+      var z = (room.position[1] + (Math.random() * (room.room_size[1]-1)) + 1) * 4
       var foe = world.createEntity()
       foe.addComponent(Physics)
       foe.addComponent(MobAI)
@@ -725,8 +726,8 @@ function createLevel (level) {
       foe.health.init(10)
       foe.mobAI.xp = 8
       foe.physics.height = 2
-      foe.physics.pos.x = x * 2
-      foe.physics.pos.z = z * 2
+      foe.physics.pos.x = x
+      foe.physics.pos.z = z
       foe.physics.pos.y = 5
       console.log('spawned mob at', x, z)
     }
