@@ -226,9 +226,7 @@ function MobAI (e) {
     txt.physics.friction = 0.3
   })
   e.on('death', function (attacker) {
-    console.log('1')
     if (attacker.level) {
-      console.log('2', e.mobAI.xp)
       attacker.level.gain(e.mobAI.xp || 0)
     }
     // spawnParticleBlood(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
@@ -365,16 +363,23 @@ function TextHolder () {
   }
 }
 
+var textures = {}
 function tex (fn) {
   return {
     type: 'image',
     src: 'assets/' + fn,
     parser: function (data) {
-      return regl.texture({
+      var tex = regl.texture({
         data: data,
         min: 'nearest',
         mag: 'nearest'
       })
+      textures[fn] = {
+        width: data.width,
+        height: data.height,
+        texture: tex
+      }
+      return tex
     }
   }
 }
@@ -386,7 +391,6 @@ require('resl')({
     chest: tex('chest.png'),
     potions: tex('potions.png')
   },
-
   onDone: run
 })
 
@@ -662,19 +666,20 @@ function run (assets) {
 
   var billboard = Billboard(regl, 2, 1)
 
-  function drawBillboard (state, x, y, z, texture) {
+  function drawBillboard (state, at, frameX, frameY, textureName) {
+    var tex = textures[textureName]
     var model = mat4.create()
     mat4.identity(model)
-    mat4.translate(model, model, vec3.fromValues(x, y, z))
+    mat4.translate(model, model, at)
     mat4.scale(model, model, vec3.fromValues(1.0, 1.0, 1.0))
-    var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
+    var rot = -Math.atan2(-camera.pos[2] - at[2], -camera.pos[0] - at[0]) + Math.PI/2
     mat4.rotateY(model, model, rot)
     billboard({
       model: model,
-      frameX: state.tick % 70 < 35 ? 0 : 0.5,
-      frameY: 0,
+      frameX: frameX / (tex.width / 16),
+      frameY: frameY / (tex.height / 16),
       view: view,
-      texture: texture
+      texture: tex.texture
     })
   }
 
@@ -849,7 +854,8 @@ function run (assets) {
     })
 
     world.queryComponents([MobAI, Physics]).forEach(function (e) {
-      drawBillboard(state, e.physics.pos.x, e.physics.pos.y, e.physics.pos.z, assets.foe)
+      var frameX = state.tick % 70 < 35 ? 0 : 1
+      drawBillboard(state, vecify(e.physics.pos), frameX, 0, 'foe.png')
     })
 
     var plr = world.queryTag('player')[0]
