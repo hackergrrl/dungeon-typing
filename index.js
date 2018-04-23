@@ -1060,13 +1060,16 @@ function run (assets) {
       e.particleEffect.draw(commands)
     })
 
+    var plr = world.queryTag('player')[0]
+
     // Draw billboard sprites
-    world.queryComponents([BillboardSprite, Physics]).forEach(function (e) {
+    var bills = world.queryComponents([BillboardSprite, Physics])
+    bills.sort(distCmp.bind(null, plr))
+    bills.forEach(function (e) {
       drawBillboard(vecify(e.physics.pos), e.billboardSprite.frameX, 0, e.billboardSprite.scale, e.billboardSprite.texture)
     })
 
     // GUI meters
-    var plr = world.queryTag('player')[0]
     var hp = plr.health.amount / plr.health.max
     var mp = plr.mana.amount / plr.mana.max
     var hpDanger = (1 - hp) * 0.4
@@ -1076,4 +1079,10 @@ function run (assets) {
     var xp = plr.level.xp / plr.level.xpNext
     xpMeter(Math.floor(xp * 40), 40, state.tick, 0.0)
   })
+}
+
+function distCmp (plr, a, b) {
+  var aDist = physicsDistance(plr, a)
+  var bDist = physicsDistance(plr, b)
+  return bDist - aDist
 }
