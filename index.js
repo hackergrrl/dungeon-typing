@@ -593,6 +593,8 @@ function run (assets) {
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, assets.atlas)
+  map.defineTile('block1', [0, 0], [1, 0], [1, 0])
+  map.defineTile('exit', [2, 0], [1, 0], [1, 0])
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
@@ -600,23 +602,29 @@ function run (assets) {
         if (k >= 1 && k <= 2) {
           var x = Math.floor(i / 2)
           var y = Math.floor(j / 2)
-          map.set(i, k, j, dun.walls.get([x, y]) ? 1 : 0)
+          map.set(i, k, j, dun.walls.get([x, y]) ? 'block1' : null)
         } else {
-          map.set(i, k, j, 1)
+          map.set(i, k, j, 'block1')
         }
       }
     }
   }
 
-  // var p = dun.children[Math.floor(Math.random() * dun.children.length)]
-  // player.physics.pos.x = (p.position[0] + p.room_size[0]/2) * 2 + 0.5
-  // player.physics.pos.z = (p.position[1] + p.room_size[1]/2) * 2 + 0.5
   var room = dun.initial_room
   player.physics.pos.x = (room.position[0] + room.size[0]) * 2
   player.physics.pos.z = (room.position[1] + room.size[1]) * 2
   player.physics.pos.y = 4
   camera.rot[1] = -Math.PI
   console.log(player.physics.pos)
+
+  while (true) {
+    if (room.room_size[0] <= 1 || room.room_size[1] <= 1) continue
+    var room = dun.children[Math.floor(Math.random() * dun.children.length)]
+    var ex = (room.position[0] + Math.floor(room.size[0]/2 - 1)) * 2
+    var ez = (room.position[1] + Math.floor(room.size[1]/2 - 1)) * 2
+    map.set(ex, 0, ez, 'exit')
+    break
+  }
 
   map.generateGeometry()
 
