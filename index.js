@@ -63,6 +63,8 @@ function canSee (a, b) {
   dx /= len
   dz /= len
 
+  var doors = world.queryComponents([Door, Physics])
+
   var steps = 0
   while (steps < 100) {
     steps++
@@ -71,6 +73,12 @@ function canSee (a, b) {
     z += dz
     if (isSolid(x, z)) {
       return false
+    }
+
+    for (var i=0; i < doors.length; i++) {
+      var d = doors[i]
+      var dist = xyzDistance(d, x, 1, z)
+      if (dist <= d.physics.width) return false
     }
 
     var ddx = b.physics.pos.x - x
@@ -181,14 +189,15 @@ function hitCommand (dice, attacker, target) {
 }
 
 function openCommand (user, target) {
-  if (!target.door) return false
+  if (!target.door || target.door.open) return false
   target.billboardSprite.frameX = 1
+  console.log('open', target.id)
   target.door.open = true
   return true
 }
 
 function closeCommand (user, target) {
-  if (!target.door) return false
+  if (!target.door || !target.door.open) return false
   target.billboardSprite.frameX = 0
   target.door.open = false
   return true
@@ -559,15 +568,26 @@ function updatePhysics (world) {
 
     // door collisions
     world.queryComponents([Door]).forEach(function (d) {
+      if (e.id === d.id) return
+      var toDoor = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+
+      // fix doors on top of doors (not pretty)
+      if (e.door && d.door) {
+        if (vec3.length(toDoor) <= d.physics.width) {
+          d.remove()
+          return
+        }
+      }
+      if (e.door) return
       if (d.door.open) return
 
       var toDoor = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
       if (vec3.length(toDoor) <= d.physics.width) {
         vec3.normalize(toDoor, toDoor)
-        // vec3.scale(toDoor, toDoor, 1)
-        e.physics.vel.x += toDoor[0] * 0.01
-        e.physics.vel.y += toDoor[1] * 0.01
-        e.physics.vel.z += toDoor[2] * 0.01
+        vec3.scale(toDoor, toDoor, 0.01)
+        e.physics.vel.x += toDoor[0]
+        e.physics.vel.y += toDoor[1]
+        e.physics.vel.z += toDoor[2]
       }
     })
 
