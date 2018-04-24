@@ -179,7 +179,7 @@ function hitCommand (dice, attacker, target) {
   camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5 * mult
 
   var dist = physicsDistance(attacker, target)
-  if (dist <= 4) {
+  if (dist <= 5) {
     target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
     target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
     if (mult === 1) {
@@ -828,7 +828,7 @@ function createLevel (level) {
       foe.addComponent(TextHolder)
       foe.addComponent(Health)
       foe.billboardSprite.init('foe.png')
-      foe.health.init(10)
+      foe.health.init(6)
       foe.mobAI.xp = 8
       foe.physics.height = 2
       foe.physics.pos.x = x
@@ -919,8 +919,10 @@ function run (assets) {
     })
 
     notify('Welcome to DUNGEON TYPIST', function () {
-      notify('Type letters to shoot them at things', function () {
+      notify('Your commands are listed along the bottom of the screen', function () {
         notify('Try typing OPEN at the door', function () {
+          notify('Type HIT at monsters', function () {
+          })
         })
       })
     })
