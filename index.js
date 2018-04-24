@@ -794,9 +794,9 @@ function createLevel (level) {
   camera.rot[1] = -Math.PI
 
   while (true) {
+    var room = dun.children[Math.floor(Math.random() * dun.children.length)]
     if (room.room_size[0] <= 1 || room.room_size[1] <= 1) continue
     if (room === dun.initial_room) continue
-    var room = dun.children[Math.floor(Math.random() * dun.children.length)]
     var ex = (room.position[0] + Math.floor(room.size[0]/2)) * 2
     var ez = (room.position[1] + Math.floor(room.size[1]/2)) * 2
     map.set(ex, 0, ez, 'exit')
