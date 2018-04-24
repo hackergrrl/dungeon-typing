@@ -11,7 +11,7 @@ var Text = require('./text')
 var Particle = require('./particle')
 var Meter = require('./meter')
 
-
+var screenWidth, screenHeight
 var tick = 0
 
 var textures = {}
@@ -390,6 +390,16 @@ function ParticleEffect () {
 function TextProjectile () {
 }
 
+function Text2D () {
+  this.generate = function (string, color) {
+    this.draw = Text(regl, string, color || undefined)
+    this.text = string
+  }
+
+  this.x = this.y = 0
+  this.draw = undefined
+}
+
 function Text3D () {
   this.generate = function (string, color) {
     this.draw = Text(regl, string, color || undefined)
@@ -433,6 +443,14 @@ function TextHolder () {
       this.alpha -= 0.05
     }
   }
+}
+
+function createGuiLabel (text, x, y, color) {
+  var txt = world.createEntity()
+  txt.addComponent(Text2D)
+  txt.text2D.generate(text, color)
+  txt.text2D.x = x
+  txt.text2D.y = y
 }
 
 function tex (fn) {
@@ -878,6 +896,14 @@ function run (assets) {
 
   createLevel(1)
 
+  process.nextTick(function () {
+    var x = 16
+    Object.keys(lexicon).forEach(function (word) {
+      createGuiLabel(word, x, screenHeight - 32, [1, 1, 1, 1])
+      x += word.length * 8 + 32
+    })
+  })
+
   var view = mat4.lookAt([],
                         [0, 0, -30],
                         [0, 0.0, 0],
@@ -908,6 +934,19 @@ function run (assets) {
     })
   }
 
+  function drawText2D (text, x, y) {
+    var proj = mat4.ortho(mat4.create(), 0, screenWidth, screenHeight, 0, -1, 1)
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, vec3.fromValues(x, y, -0.2))
+    mat4.scale(model, model, vec3.fromValues(25, 25, 25))
+    text({
+      projection: proj,
+      view: mat4.create(),
+      model: model
+    })
+  }
+
   function drawText (text, x, y, z) {
     var model = mat4.create()
     mat4.identity(model)
@@ -926,6 +965,8 @@ function run (assets) {
 
   regl.frame(function (state) {
     tick = state.tick
+    screenWidth = state.viewportWidth
+    screenHeight = state.viewportHeight
 
     // fps
     accum += (new Date().getTime() - last)
@@ -1072,6 +1113,12 @@ function run (assets) {
     mpMeter(Math.floor(plr.mana.amount * 0.5), Math.floor(plr.mana.max * 0.5), state.tick, mpDanger)
     var xp = plr.level.xp / plr.level.xpNext
     xpMeter(Math.floor(xp * 40), 40, state.tick, 0.0)
+
+
+    // GUI text
+    world.queryComponents([Text2D]).forEach(function (e) {
+      drawText2D(e.text2D.draw, e.text2D.x, e.text2D.y)
+    })
   })
 }
 
