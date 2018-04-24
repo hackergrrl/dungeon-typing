@@ -1,8 +1,6 @@
 # Dungeon Typist
 
-<center>
-<img src="assets/title.jpg"/>
-</center>
+<img src="build/title.jpg"/>
 
 ## Play
 
