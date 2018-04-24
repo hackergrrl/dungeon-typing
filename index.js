@@ -762,6 +762,7 @@ function createLevel (level) {
       player.health.amount = player.health.max
       player.mana.max = Math.floor(player.mana.max * 1.1)
       player.mana.amount = player.mana.max
+      notify('    Welcome to Level ' + player.level.level + '    ')
     })
   }
 
