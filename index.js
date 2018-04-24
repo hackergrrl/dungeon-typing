@@ -732,10 +732,8 @@ function createLevel (level) {
   if (!world) world = nano()
   var player = world.queryTag('player')[0]
 
-  var mobs = world.queryComponents([MobAI]).slice()
-  mobs.forEach(function (e) {
-    e.remove()
-  })
+  world.queryComponents([MobAI]).slice().forEach(function (e) { e.remove() })
+  world.queryComponents([Door]).slice().forEach(function (e) { e.remove() })
 
   if (!player) {
     player = world.createEntity()
@@ -769,8 +767,10 @@ function createLevel (level) {
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, textures['atlas.png'], 16, 16)
   var v = level
-  map.defineTile('block1', [0, 2], [0, 0], [0, 0])
-  map.defineTile('exit',   [2, 0], [0, v-1], [0, v-1])
+  var roof = (level - 1) % 2
+  var floor = (level - 1) % 8
+  map.defineTile('block1', [floor, 2], [roof, 1], [roof, 1])
+  map.defineTile('exit',   [2, 0], [roof, 1], [roof, 1])
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
