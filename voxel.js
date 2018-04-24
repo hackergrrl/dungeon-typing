@@ -127,8 +127,8 @@ function Voxel (regl, width, height, depth, atlas, tileTextureWidth, tileTexture
   this.depth = depth
 
   this.atlasTexture = atlas
-  this.atlasWidth = atlas.width / tileTextureWidth
-  this.atlasHeight = atlas.width / tileTextureHeight
+  this.atlasWidth = atlas.width
+  this.atlasHeight = atlas.height
   this.map = allocMap(width, height, depth)
 
   this.tileDefs = {}

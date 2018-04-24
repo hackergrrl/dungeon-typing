@@ -768,9 +768,9 @@ function createLevel (level) {
 
   // alloc + config map
   map = new Voxel(regl, 50, 10, 50, textures['atlas.png'], 16, 16)
-  var v = level - 1
-  map.defineTile('block1', [0, v], [1, v], [1, v])
-  map.defineTile('exit', [2, 0], [1, v], [1, v])
+  var v = level
+  map.defineTile('block1', [0, 2], [0, 0], [0, 0])
+  map.defineTile('exit',   [2, 0], [0, v-1], [0, v-1])
   var dun = generateLevel(25, 25)
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
