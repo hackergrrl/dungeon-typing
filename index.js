@@ -143,6 +143,7 @@ function spawnParticleHit (at) {
 }
 
 function checkLexicon (plr, mob, text) {
+  text = text.toLowerCase()
   var words = Object.keys(lexicon)
 
   for (var j=0; j < words.length; j++) {
@@ -451,6 +452,20 @@ function createGuiLabel (text, x, y, color) {
   txt.text2D.generate(text, color)
   txt.text2D.x = x
   txt.text2D.y = y
+  return txt
+}
+
+function notify (text, color, cb) {
+  if (typeof color === 'function') {
+    cb = color
+    color = null
+  }
+  color = color || [1,1,1,1]
+  var e = createGuiLabel(text, screenWidth/2, screenHeight/2, color)
+  setTimeout(function () {
+    e.remove()
+    if (cb) cb()
+  }, text.length * 100)
 }
 
 function tex (fn) {
@@ -901,6 +916,13 @@ function run (assets) {
     Object.keys(lexicon).forEach(function (word) {
       createGuiLabel(word, x, screenHeight - 32, [1, 1, 1, 1])
       x += word.length * 8 + 32
+    })
+
+    notify('Welcome to DUNGEON TYPIST', function () {
+      notify('Type letters to shoot them at things', function () {
+        notify('Try typing OPEN at the door', function () {
+        })
+      })
     })
   })
 
