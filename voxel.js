@@ -129,6 +129,8 @@ function Voxel (regl, width, height, depth, atlas, tileTextureWidth, tileTexture
   this.atlasTexture = atlas
   this.atlasWidth = atlas.width
   this.atlasHeight = atlas.height
+  this.tileWidth = tileTextureWidth
+  this.tileHeight = tileTextureHeight
   this.map = allocMap(width, height, depth)
 
   this.tileDefs = {}
@@ -280,20 +282,22 @@ Voxel.prototype.addBox = function (x, y, z, tileDefName) {
       continue
     }
 
-    var tile = (side === 2) ? 0 : 1
-
     // vertices
     this.position.push([boxVertices[i][0] + x,
                         boxVertices[i][1] + y,
                         boxVertices[i][2] + z])
 
     // texture coords
-    var uv
-    if (side === Side.Top) uv = this.tileDefs[tileDefName].top
-    else if (side === Side.Bottom) uv = this.tileDefs[tileDefName].bottom
-    else uv = this.tileDefs[tileDefName].side
-    this.uv.push([boxUv[i][0] / this.atlasWidth +  (uv[0] / this.atlasWidth),
-                  boxUv[i][1] / this.atlasHeight + (uv[1] / this.atlasHeight)])
+    var frame
+    if (side === Side.Top) frame = this.tileDefs[tileDefName].top
+    else if (side === Side.Bottom) frame = this.tileDefs[tileDefName].bottom
+    else frame = this.tileDefs[tileDefName].side
+    var framesAcross = this.atlasWidth / this.tileWidth
+    var framesDown = this.atlasHeight / this.tileHeight
+    var oneFrameX = this.tileWidth / this.atlasWidth
+    var oneFrameY = this.tileHeight / this.atlasHeight
+    this.uv.push([boxUv[i][0] / framesAcross + (frame[0] * oneFrameX),
+                  boxUv[i][1] / framesDown + (frame[1] * oneFrameY)])
 
     // normals
     this.normal.push([boxNormal[i][0], boxNormal[i][1], boxNormal[i][2]])
