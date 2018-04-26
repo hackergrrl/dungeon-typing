@@ -504,6 +504,7 @@ document.body.onkeypress = function (ev) {
   if (plr.health.amount <= 0) return
 
   var k = ev.key
+  if (k.startsWith('Arrow')) return
   var txt = world.createEntity()
   txt.addComponent(Text3D)
   txt.addComponent(TextProjectile)
@@ -760,6 +761,7 @@ function createLevel (level) {
       player.health.amount = player.health.max
       player.mana.max = Math.floor(player.mana.max * 1.1)
       player.mana.amount = player.mana.max
+      // TODO: increase melee damage?
       notify('    Welcome to Level ' + player.level.level + '    ')
     })
   }
