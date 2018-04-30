@@ -197,6 +197,10 @@ function hitCommand (dice, attacker, target) {
 function openCommand (user, target) {
   if (!target.door || target.door.open) return false
   target.billboardSprite.frameX = 1
+  target.physics.width /= 2
+  target.physics.depth /= 2
+  target.physics.pos.x += Math.sin(target.door.rot - Math.PI/2) * 1.5
+  target.physics.pos.z -= Math.cos(target.door.rot - Math.PI/2) * 1.5
   target.door.open = true
   return true
 }
@@ -204,6 +208,10 @@ function openCommand (user, target) {
 function closeCommand (user, target) {
   if (!target.door || !target.door.open) return false
   target.billboardSprite.frameX = 0
+  target.physics.width *= 2
+  target.physics.depth *= 2
+  target.physics.pos.x += -Math.sin(target.door.rot - Math.PI/2) * 1.5
+  target.physics.pos.z -= -Math.cos(target.door.rot - Math.PI/2) * 1.5
   target.door.open = false
   return true
 }
@@ -268,6 +276,7 @@ function Player (e) {
 
 function Door () {
   this.open = false
+  this.rot = 0
 }
 
 function MobAI (e) {
@@ -842,12 +851,13 @@ function createLevel (level) {
     }
 
     room.exits.forEach(function (exit) {
-      var rot = exit[1] * 180 / Math.PI
+      var rot = exit[1] * Math.PI / 180
       var x = (room.position[0] + exit[0][0]) * 4 + 1
       var z = (room.position[1] + exit[0][1]) * 4 + 1
       var door = world.createEntity()
       door.addComponent(Physics)
       door.addComponent(Door)
+      door.door.rot = rot
       door.addComponent(BillboardSprite)
       door.addComponent(TextHolder)
       door.addComponent(Health)
