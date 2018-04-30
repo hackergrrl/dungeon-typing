@@ -1110,19 +1110,6 @@ function run (assets) {
       })
     })
 
-    // Draw particle effects
-    world.queryComponents([ParticleEffect]).forEach(function (e) {
-      var commands = e.particleEffect.data.map(function (d) {
-        return {
-          projection: projection,
-          view: view,
-          model: d.mat,
-          color: e.particleEffect.color
-        }
-      })
-      e.particleEffect.draw(commands)
-    })
-
     var plr = world.queryTag('player')[0]
 
     // Draw billboard sprites
@@ -1146,6 +1133,19 @@ function run (assets) {
     // GUI text
     world.queryComponents([Text2D]).forEach(function (e) {
       drawText2D(e.text2D.draw, e.text2D.x, e.text2D.y)
+    })
+
+    // Draw particle effects
+    world.queryComponents([ParticleEffect]).forEach(function (e) {
+      var commands = e.particleEffect.data.map(function (d) {
+        return {
+          projection: projection,
+          view: view,
+          model: d.mat,
+          color: e.particleEffect.color
+        }
+      })
+      e.particleEffect.draw(commands)
     })
   })
 }
