@@ -127,7 +127,7 @@ function spawnParticleBlood (at) {
     pos: at,
     speed: 0.025,
     fadeRate: 0.01,
-    color: [1, 0, 0, 1]
+    color: [1, 0, 0, 0.2]
   })
 }
 
