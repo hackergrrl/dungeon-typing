@@ -2,12 +2,19 @@ var mat4 = require('gl-mat4')
 var vectorize = require('vectorize-text')
 var tess = require('triangulate-polyline')
 
+var cache = {}
+
 module.exports = function (regl, text, color) {
-  var mesh = vectorize(text, {
-    triangles: true,
-    textAlign: 'center',
-    textBaseline: 'middle'
-  })
+  var mesh
+  if (cache[text]) mesh = cache[text]
+  else {
+    mesh = vectorize(text, {
+      triangles: true,
+      textAlign: 'center',
+      textBaseline: 'middle'
+    })
+  }
+  cache[text] = mesh
 
   var cmd = regl({
     frag: `
