@@ -188,9 +188,10 @@ function hitCommand (dice, attacker, target) {
       spawnParticleBlood(vecify(target.physics.pos))
     }
     target.health.damage(dmg, attacker)
+    return true
+  } else {
+    return false
   }
-
-  return true
 }
 
 function openCommand (user, target) {
