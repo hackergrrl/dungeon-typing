@@ -877,15 +877,32 @@ function createLevel (level) {
   })
   updateLights(lights)
   console.timeEnd('light')
+}
 
+function surroundedSolid (map, x, y, z) {
+  var vals = []
+  vals.push(map.isSolid(x, y, z))
+  vals.push(map.isSolid(x - 1, y, z))
+  vals.push(map.isSolid(x + 1, y, z))
+  vals.push(map.isSolid(x, y - 1, z))
+  vals.push(map.isSolid(x, y + 1, z))
+  vals.push(map.isSolid(x, y, z - 1))
+  vals.push(map.isSolid(x, y, z + 1))
+  for (var i=0; i < vals.length; i++) {
+    if (vals[i] !== vals[0]) return false
+  }
+  return true
 }
 
 function updateLights (lights) {
+  var n = 0
   for (var i=0; i < map.width; i++) {
     for (var j=0; j < map.depth; j++) {
       for (var k=0; k < map.height; k++) {
+        if (surroundedSolid(map, i, k, j)) continue
         lights.forEach(function (light) {
           var lightPos = vec3.fromValues(light.pos.x, light.pos.y, light.pos.z)
+	  n++
           map.lightBoxAdd(i, k, j, function (pos, normal) {
             var br = pointLight(lightPos, light.intensity, pos, normal)
             return [br * 226/255, br * 188/255, br * 134/255]
@@ -894,6 +911,9 @@ function updateLights (lights) {
       }
     }
   }
+  var total = map.width * map.height * map.depth * lights.length
+  var per = (100 * n / total).toFixed(0)
+  console.log('lighting calculations:', per + '% of map')
 }
 
 function pickFreeTile () {
