@@ -174,12 +174,12 @@ function hitCommand (dice, attacker, target) {
   var mult = 1
   if (attacker !== player) mult = -0.5
 
-  camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
-  camera.shakeVel[1] = 0
-  camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5 * mult
-
   var dist = physicsDistance(attacker, target)
   if (dist <= 5) {
+    camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
+    camera.shakeVel[1] = 0
+    camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5 * mult
+
     target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
     target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
     if (mult === 1) {
