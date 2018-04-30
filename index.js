@@ -1100,8 +1100,6 @@ function run (assets) {
           m.physics.vel.x += e.physics.vel.x * 0.01
           m.physics.vel.z += e.physics.vel.z * 0.01
 
-          spawnParticleHit(vec3.fromValues(e.physics.pos.x, e.physics.pos.y, e.physics.pos.z))
-
           m.textHolder.add(e.text3D.text)
           e.remove()
           done = true
