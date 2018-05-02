@@ -27,6 +27,7 @@ var camera = {
 
 var lexicon = {
   'hit':   hitCommand.bind(null, '2d3+0'),
+  'slam':  slamCommand.bind(null, '1d5+2'),
   'open':  openCommand,
   'close': closeCommand,
 }
@@ -165,6 +166,26 @@ function rollDice (str) {
   }
 
   return res
+}
+
+function queryInCircle (components, center, radius) {
+  if (components.indexOf(Physics) === -1) return []
+
+  return world.queryComponents(components)
+    .filter(function (e) {
+      return xyzDistance(e, center[0], center[1], center[2]) <= radius
+    })
+}
+
+// Close a door. Really hard.
+function slamCommand (dice, attacker, target) {
+  if (closeCommand(attacker, target)) {
+    var center = vecify(target.physics.pos)
+    queryInCircle([Physics, Health], center, 4).forEach(function (e) {
+      spawnParticleStrike(vecify(e.physics.pos))
+      e.health.damage(rollDice(dice), attacker)
+    })
+  }
 }
 
 function hitCommand (dice, attacker, target) {
