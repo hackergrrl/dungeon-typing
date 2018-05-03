@@ -1,24 +1,12 @@
 var mat4 = require('gl-mat4')
-var vectorize = require('vectorize-text')
-
-var cache = {}
+var vectorize = require('./text2')('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890')
 
 module.exports = function (regl, text, color) {
-  var mesh
-  if (cache[text]) mesh = cache[text]
-  else {
-    mesh = vectorize(text, {
-      // font: 'monospace',
-      triangles: true,
-      textAlign: 'center',
-      // textBaseline: 'middle'
-    })
-    mesh.positions = mesh.positions.map(function (p) {
-      p[1] += 1.5
-      return p
-    })
-  }
-  cache[text] = mesh
+  var mesh = vectorize(text)
+  mesh.positions = mesh.positions.map(function (p) {
+    p[1] += 1.5
+    return p
+  })
 
   var cmd = regl({
     frag: `
