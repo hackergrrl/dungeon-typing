@@ -1,6 +1,5 @@
 var mat4 = require('gl-mat4')
 var vectorize = require('vectorize-text')
-var tess = require('triangulate-polyline')
 
 var cache = {}
 
