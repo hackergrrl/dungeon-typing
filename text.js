@@ -1,5 +1,5 @@
 var mat4 = require('gl-mat4')
-var vectorize = require('./text2')('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890')
+var vectorize = require('./text2')
 
 module.exports = function (regl, text, color) {
   var mesh = vectorize(text)
