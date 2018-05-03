@@ -8,6 +8,7 @@ function TextGen (alphabet) {
   console.time('textgen')
   alphabet.split('').forEach(function (letter) {
     meshes[letter] = vectorize(letter, {
+      font: 'monospace',
       triangles: true,
       textAlign: 'center'
     })
@@ -18,13 +19,15 @@ function TextGen (alphabet) {
     var positions = []
     var cells = []
 
+    var halfwidth = text.length * 0.5 * 0.5
+
     var idx = 0
     text.split('').forEach(function (letter, n) {
       var mesh = meshes[letter]
       if (!mesh) return
       for (var i = 0; i < mesh.positions.length; i++) {
         var pos = mesh.positions[i]
-        positions.push([pos[0] + n * 0.4, pos[1]])
+        positions.push([pos[0] + n * 0.5 - halfwidth, pos[1]])
       }
       for (var i = 0; i < mesh.cells.length; i++) {
         var tri = mesh.cells[i]
