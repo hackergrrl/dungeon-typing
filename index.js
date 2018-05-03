@@ -223,6 +223,7 @@ function openCommand (user, target) {
   target.physics.pos.x += Math.sin(target.door.rot - Math.PI/2) * 1.5
   target.physics.pos.z -= Math.cos(target.door.rot - Math.PI/2) * 1.5
   target.door.open = true
+  target.physicsCone.radius = 0.5
   return true
 }
 
@@ -234,6 +235,7 @@ function closeCommand (user, target) {
   target.physics.pos.x += -Math.sin(target.door.rot - Math.PI/2) * 1.5
   target.physics.pos.z -= -Math.cos(target.door.rot - Math.PI/2) * 1.5
   target.door.open = false
+  target.physicsCone.radius = 4
   return true
 }
 
@@ -283,7 +285,8 @@ function Physics () {
   }
 }
 
-function Chest () {
+function PhysicsCone () {
+  this.radius = 4
 }
 
 function Player (e) {
@@ -636,28 +639,26 @@ function updatePhysics (world) {
     // gravity
     e.physics.vel.y -= 0.006
 
-    // door collisions
-    world.queryComponents([Door]).forEach(function (d) {
+    // physics cone collisions
+    world.queryComponents([Physics, PhysicsCone]).forEach(function (d) {
       if (e.id === d.id) return
-      var toDoor = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+      var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
 
       // fix doors on top of doors (not pretty)
       if (e.door && d.door) {
-        if (vec3.length(toDoor) <= d.physics.width) {
+        if (vec3.length(toTarget) <= d.physics.width) {
           d.remove()
           return
         }
       }
-      if (e.door) return
-      if (d.door.open) return
 
-      var toDoor = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
-      if (vec3.length(toDoor) <= d.physics.width) {
-        vec3.normalize(toDoor, toDoor)
-        vec3.scale(toDoor, toDoor, 0.01)
-        e.physics.vel.x += toDoor[0]
-        e.physics.vel.y += toDoor[1]
-        e.physics.vel.z += toDoor[2]
+      var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+      if (vec3.length(toTarget) <= d.physicsCone.radius) {
+        vec3.normalize(toTarget, toTarget)
+        vec3.scale(toTarget, toTarget, 0.01)
+        e.physics.vel.x += toTarget[0]
+        e.physics.vel.y += toTarget[1]
+        e.physics.vel.z += toTarget[2]
       }
     })
 
@@ -771,12 +772,14 @@ function createLevel (level) {
     player = world.createEntity()
     player.addComponent(Player)
     player.addComponent(Physics)
+    player.addComponent(PhysicsCone)
     player.addComponent(CameraController)
     player.addComponent(Health)
     player.addComponent(Level)
     player.addComponent(Mana)
     player.health.init(30)
     player.mana.init(12)
+    player.physicsCone.radius = 2
     player.addTag('player')
     player.on('death', function () {
       player.physics.height = 0.5
@@ -860,6 +863,7 @@ function createLevel (level) {
       foe.addComponent(Physics)
       foe.addComponent(BillboardSprite)
       foe.addComponent(MobAI)
+      foe.addComponent(PhysicsCone)
       foe.addComponent(TextHolder)
       foe.addComponent(Health)
       foe.billboardSprite.init('foe.png')
@@ -869,6 +873,7 @@ function createLevel (level) {
       foe.physics.pos.x = x
       foe.physics.pos.z = z
       foe.physics.pos.y = 5
+      foe.physicsCone.radius = 2
     }
 
     room.exits.forEach(function (exit) {
@@ -878,6 +883,7 @@ function createLevel (level) {
       var door = world.createEntity()
       door.addComponent(Physics)
       door.addComponent(Door)
+      door.addComponent(PhysicsCone)
       door.door.rot = rot
       door.addComponent(BillboardSprite)
       door.addComponent(TextHolder)
