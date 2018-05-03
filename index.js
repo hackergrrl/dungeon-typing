@@ -545,11 +545,11 @@ document.body.onkeypress = function (ev) {
   letters++
   lastLetter = new Date().getTime()
 
-  var yrot = camera.rot[1] - 0.05 + letters*0.01
+  var yrot = camera.rot[1]
   txt.physics.pos.x = plr.physics.pos.x + Math.sin(yrot)
   txt.physics.pos.z = plr.physics.pos.z - Math.cos(yrot)
-  txt.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.1
-  txt.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.1
+  txt.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.3
+  txt.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.3
   txt.physics.pos.y = 3
   txt.physics.vel.x = plr.physics.vel.x + Math.sin(yrot) * 0.8
   txt.physics.vel.z = plr.physics.vel.z - Math.cos(yrot) * 0.8
