@@ -285,8 +285,8 @@ function Physics () {
   }
 }
 
-function PhysicsCone () {
-  this.radius = 4
+function PhysicsCone (e, radius) {
+  this.radius = radius || 4
 }
 
 function Player (e) {
@@ -331,23 +331,18 @@ function MobAI (e) {
   })
 }
 
-function BillboardSprite () {
+function BillboardSprite (e, tname) {
   this.texture = null
   this.frameX = 0
   this.frameY = 0
   this.scale = 1
-  this.init = function (tname) {
-    this.texture = tname
-  }
+  this.texture = tname
 }
 
-function Health (e) {
+function Health (e, max) {
   this.amount = 100
   this.max = 100
-
-  this.init = function (max) {
-    this.amount = this.max = max
-  }
+  this.amount = this.max = max
 
   this.damage = function (num, attacker) {
     if (this.amount <= 0) return
@@ -360,13 +355,10 @@ function Health (e) {
   }
 }
 
-function Mana (e) {
+function Mana (e, max) {
   this.amount = 100
   this.max = 100
-
-  this.init = function (max) {
-    this.amount = this.max = max
-  }
+  this.amount = this.max = max
 
   this.spend = function (num) {
     if (this.amount - num < 0) return false
@@ -772,14 +764,11 @@ function createLevel (level) {
     player = world.createEntity()
     player.addComponent(Player)
     player.addComponent(Physics)
-    player.addComponent(PhysicsCone)
+    player.addComponent(PhysicsCone, 2)
     player.addComponent(CameraController)
-    player.addComponent(Health)
+    player.addComponent(Health, 30)
+    player.addComponent(Mana, 12)
     player.addComponent(Level)
-    player.addComponent(Mana)
-    player.health.init(30)
-    player.mana.init(12)
-    player.physicsCone.radius = 2
     player.addTag('player')
     player.on('death', function () {
       player.physics.height = 0.5
@@ -861,19 +850,16 @@ function createLevel (level) {
       var z = (room.position[1] + (Math.random() * (room.room_size[1]-1)) + 1) * 4
       var foe = world.createEntity()
       foe.addComponent(Physics)
-      foe.addComponent(BillboardSprite)
+      foe.addComponent(BillboardSprite, 'foe.png')
       foe.addComponent(MobAI)
-      foe.addComponent(PhysicsCone)
+      foe.addComponent(PhysicsCone, 2)
       foe.addComponent(TextHolder)
-      foe.addComponent(Health)
-      foe.billboardSprite.init('foe.png')
-      foe.health.init(6)
+      foe.addComponent(Health, 6)
       foe.mobAI.xp = 8
       foe.physics.height = 2
       foe.physics.pos.x = x
       foe.physics.pos.z = z
       foe.physics.pos.y = 5
-      foe.physicsCone.radius = 2
     }
 
     room.exits.forEach(function (exit) {
@@ -885,12 +871,10 @@ function createLevel (level) {
       door.addComponent(Door)
       door.addComponent(PhysicsCone)
       door.door.rot = rot
-      door.addComponent(BillboardSprite)
+      door.addComponent(BillboardSprite, 'door.png')
       door.addComponent(TextHolder)
-      door.addComponent(Health)
-      door.billboardSprite.init('door.png')
+      door.addComponent(Health, 50)
       door.billboardSprite.scale = 2
-      door.health.init(50)
       door.physics.movable = false
       door.physics.height = 4
       door.physics.width = 4
