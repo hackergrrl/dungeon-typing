@@ -9,7 +9,7 @@ module.exports = function (regl, text, color) {
   if (cache[text]) mesh = cache[text]
   else {
     mesh = vectorize(text, {
-      font: 'monospace',
+      // font: 'monospace',
       triangles: true,
       textAlign: 'center',
       // textBaseline: 'middle'
