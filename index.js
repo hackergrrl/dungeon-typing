@@ -968,10 +968,10 @@ function run (assets) {
   createLevel(1)
 
   process.nextTick(function () {
-    var x = 16
+    var x = 24
     Object.keys(lexicon).forEach(function (word) {
       createGuiLabel(word, x, screenHeight - 32, [1, 1, 1, 1])
-      x += word.length * 8 + 32
+      x += word.length * 16 + 32
     })
 
     notify('Welcome to DUNGEON TYPIST', function () {

@@ -9,9 +9,14 @@ module.exports = function (regl, text, color) {
   if (cache[text]) mesh = cache[text]
   else {
     mesh = vectorize(text, {
+      font: 'monospace',
       triangles: true,
       textAlign: 'center',
-      textBaseline: 'middle'
+      // textBaseline: 'middle'
+    })
+    mesh.positions = mesh.positions.map(function (p) {
+      p[1] += 1.5
+      return p
     })
   }
   cache[text] = mesh
