@@ -307,6 +307,11 @@ function Floaty (e) {
   }
 }
 
+function Identity (e, name, desc) {
+  this.name = name || 'a nondescript object'
+  this.description = desc || 'This object is remarkable in how ambiguous and unidentifiable it is.'
+}
+
 function Player (e) {
   this.update = function () {
     if (getTileAt(e.physics.pos.x, 0, e.physics.pos.z) === 'exit') {
@@ -831,7 +836,7 @@ function createLevel (level) {
       notify('    Welcome to Level ' + player.level.level + '    ')
     })
     player.on('pickup-item', function (i) {
-      createGuiLabel('1 apple', 64, screenHeight - 32, [1,1,1,1])
+      createGuiLabel(String(player.inventory.contents.length) + ' ' + i.identity.name, 64, screenHeight - 32, [1,1,1,1])
     })
   }
 
@@ -869,6 +874,7 @@ function createLevel (level) {
   apple.billboardSprite.scale = 0.5
   apple.addComponent(Physics)
   apple.addComponent(Item)
+  apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
   apple.addComponent(Floaty)
   apple.physics.height = 3
