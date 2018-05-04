@@ -1,9 +1,6 @@
 var mat4 = require('gl-mat4')
 
-module.exports = function (regl, framesWide, framesTall) {
-  var fx = 1 / framesWide
-  var fy = 1 / framesTall
-
+module.exports = function (regl) {
   return regl({
     frag: `
       precision mediump float;
@@ -26,6 +23,8 @@ module.exports = function (regl, framesWide, framesTall) {
       uniform mat4 model;
       uniform float frameX;
       uniform float frameY;
+      uniform float framesWide;
+      uniform float framesTall;
       attribute vec3 pos;
       attribute vec2 uv;
       varying vec3 vPos;
@@ -33,7 +32,7 @@ module.exports = function (regl, framesWide, framesTall) {
 
       void main () {
         gl_Position = projection * view * model * vec4(pos, 1.0);
-        vUv = vec2(uv.x + frameX, uv.y + frameY);
+        vUv = vec2(uv.x * framesWide + frameX, uv.y * framesTall + frameY);
         vPos = pos;
       }
     `,
@@ -49,13 +48,13 @@ module.exports = function (regl, framesWide, framesTall) {
         [ -1, -1, 0 ]
       ],
       uv: [
-        [ 0,  0 ],
-        [ fx, 0 ],
-        [ fx,fy ],
+        [ 0, 0 ],
+        [ 1, 0 ],
+        [ 1, 1 ],
 
         [ 0,  0 ],
-        [ fx,fy ],
-        [ 0, fy ]
+        [ 1,  1 ],
+        [ 0,  1 ]
       ]
     },
 
@@ -79,7 +78,9 @@ module.exports = function (regl, framesWide, framesTall) {
       model: regl.prop('model'),
       texture: regl.prop('texture'),
       frameX: regl.prop('frameX'),
-      frameY: regl.prop('frameY')
+      frameY: regl.prop('frameY'),
+      framesWide: regl.prop('framesWide'),
+      framesTall: regl.prop('framesTall')
     },
 
     count: 6

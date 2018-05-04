@@ -30,6 +30,7 @@ var lexicon = {
   'slam':  slamCommand.bind(null, '1d5+2'),
   'open':  openCommand,
   'close': closeCommand,
+  'get': getCommand,
 }
 
 var letters = 0
@@ -39,7 +40,8 @@ var systems = [
   updatePhysics,
   updateCamera,
   updateMobAI,
-  updateParticles
+  updateParticles,
+  function () { world.queryComponents([Floaty, Physics]).forEach(function (e) { e.floaty.update() }) },
 ]
 
 var projection
@@ -196,7 +198,7 @@ function hitCommand (dice, attacker, target) {
   if (attacker !== player) mult = -0.5
 
   var dist = physicsDistance(attacker, target)
-  if (dist <= 3.5) {
+  if (dist <= 4) {
     camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
     camera.shakeVel[1] = 0
     camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5 * mult
@@ -239,6 +241,12 @@ function closeCommand (user, target) {
   return true
 }
 
+function getCommand (user, target) {
+  if (!target.item) return false
+  if (physicsDistance(user, target) > 5) return false
+  return user.inventory.pickup(target)
+}
+
 function physicsDistance (a, b) {
   var dx = b.physics.pos.x - a.physics.pos.x
   var dy = b.physics.pos.y - a.physics.pos.y
@@ -276,6 +284,7 @@ function Physics () {
   this.length = 4
   this.height = 4
 
+  this.gravity = 1
   this.friction = 0.94
 
   this.vel = {
@@ -287,6 +296,15 @@ function Physics () {
 
 function PhysicsCone (e, radius) {
   this.radius = radius || 4
+}
+
+function Floaty (e) {
+  this.update = function () {
+    var now = new Date().getTime()
+    e.physics.gravity = 0
+    e.physics.vel.y = 0
+    e.physics.pos.y += Math.sin(now * 0.003) * 0.002
+  }
 }
 
 function Player (e) {
@@ -331,12 +349,15 @@ function MobAI (e) {
   })
 }
 
-function BillboardSprite (e, tname) {
+function BillboardSprite (e, tname, frameSize) {
   this.texture = null
   this.frameX = 0
   this.frameY = 0
+  this.framesWide = (frameSize || [])[0] || 2
+  this.framesTall = (frameSize || [])[1] || 1
   this.scale = 1
   this.texture = tname
+  this.visible = true
 }
 
 function Health (e, max) {
@@ -472,6 +493,22 @@ function TextHolder () {
   }
 }
 
+function Item (e) {
+  this.owner = null
+}
+
+function Inventory (e) {
+  this.contents = []
+
+  this.pickup = function (i) {
+    i.billboardSprite.visible = false
+    i.item.owner = e
+    i.removeComponent(Physics)
+    this.contents.push(i)
+    return true
+  }
+}
+
 function createGuiLabel (text, x, y, color) {
   var txt = world.createEntity()
   txt.addComponent(Text2D)
@@ -521,6 +558,8 @@ require('resl')({
     chest: tex('chest.png'),
     potions: tex('potions.png'),
     door: tex('door.png'),
+    food: tex('food.png'),
+    apple: tex('apple.png')
   },
   onDone: run
 })
@@ -629,30 +668,32 @@ function updateMobAI (world) {
 function updatePhysics (world) {
   world.queryComponents([Physics]).forEach(function (e) {
     // gravity
-    e.physics.vel.y -= 0.006
+    e.physics.vel.y -= 0.006 * e.physics.gravity
 
     // physics cone collisions
-    world.queryComponents([Physics, PhysicsCone]).forEach(function (d) {
-      if (e.id === d.id) return
-      var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+    if (e.physicsCone) {
+      world.queryComponents([Physics, PhysicsCone]).forEach(function (d) {
+        if (e.id === d.id) return
+        var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
 
-      // fix doors on top of doors (not pretty)
-      if (e.door && d.door) {
-        if (vec3.length(toTarget) <= d.physics.width) {
-          d.remove()
-          return
+        // fix doors on top of doors (not pretty)
+        if (e.door && d.door) {
+          if (vec3.length(toTarget) <= d.physics.width) {
+            d.remove()
+            return
+          }
         }
-      }
 
-      var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
-      if (vec3.length(toTarget) <= d.physicsCone.radius) {
-        vec3.normalize(toTarget, toTarget)
-        vec3.scale(toTarget, toTarget, 0.01)
-        e.physics.vel.x += toTarget[0]
-        e.physics.vel.y += toTarget[1]
-        e.physics.vel.z += toTarget[2]
-      }
-    })
+        var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+        if (vec3.length(toTarget) <= d.physicsCone.radius) {
+          vec3.normalize(toTarget, toTarget)
+          vec3.scale(toTarget, toTarget, 0.01)
+          e.physics.vel.x += toTarget[0]
+          e.physics.vel.y += toTarget[1]
+          e.physics.vel.z += toTarget[2]
+        }
+      })
+    }
 
     // wall collisions; test x and z separately
     var tx = e.physics.pos.x + e.physics.vel.x
@@ -768,6 +809,7 @@ function createLevel (level) {
     player.addComponent(CameraController)
     player.addComponent(Health, 30)
     player.addComponent(Mana, 12)
+    player.addComponent(Inventory)
     player.addComponent(Level)
     player.addTag('player')
     player.on('death', function () {
@@ -817,6 +859,18 @@ function createLevel (level) {
   player.physics.pos.z = (room.position[1] + room.size[1]) * 2
   player.physics.pos.y = 4
   camera.rot[1] = -Math.PI
+
+  var apple = world.createEntity()
+  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
+  apple.billboardSprite.scale = 0.5
+  apple.addComponent(Physics)
+  apple.addComponent(Item)
+  apple.addComponent(TextHolder)
+  apple.addComponent(Floaty)
+  apple.physics.height = 3
+  apple.physics.pos.x = player.physics.pos.x
+  apple.physics.pos.y = player.physics.pos.y - 2
+  apple.physics.pos.z = player.physics.pos.z + 1
 
   while (true) {
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
@@ -987,8 +1041,10 @@ function run (assets) {
 
   var billboard = Billboard(regl, 2, 1)
 
-  function drawBillboard (at, frameX, frameY, scale, textureName) {
-    var tex = textures[textureName]
+  function drawBillboard (e) {
+    var tex = textures[e.billboardSprite.texture]
+    var at = vecify(e.physics.pos)
+    var scale = e.billboardSprite.scale
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, at)
@@ -997,8 +1053,10 @@ function run (assets) {
     mat4.rotateY(model, model, rot)
     billboard({
       model: model,
-      frameX: frameX / (tex.width / 16),
-      frameY: frameY / (tex.height / 16),
+      framesWide: 1 / e.billboardSprite.framesWide,
+      framesTall: 1 / e.billboardSprite.framesTall,
+      frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
+      frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
       view: view,
       texture: tex.texture
     })
@@ -1090,7 +1148,7 @@ function run (assets) {
     })
 
     // Draw text over targets
-    world.queryComponents([TextHolder]).forEach(function (e) {
+    world.queryComponents([Physics, TextHolder]).forEach(function (e) {
       if (e.textHolder.draw) {
         drawText(e.textHolder.draw, e.physics.pos.x, e.physics.pos.y + 1.5, e.physics.pos.z)
       }
@@ -1119,8 +1177,8 @@ function run (assets) {
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
         if (dist < m.physics.width/2) {
-          m.physics.vel.x += e.physics.vel.x * 0.01
-          m.physics.vel.z += e.physics.vel.z * 0.01
+          //m.physics.vel.x += e.physics.vel.x * 0.01
+          //m.physics.vel.z += e.physics.vel.z * 0.01
 
           m.textHolder.add(e.text3D.text)
           e.remove()
@@ -1156,7 +1214,7 @@ function run (assets) {
     var bills = world.queryComponents([BillboardSprite, Physics])
     bills.sort(distCmp.bind(null, plr))
     bills.forEach(function (e) {
-      drawBillboard(vecify(e.physics.pos), e.billboardSprite.frameX, 0, e.billboardSprite.scale, e.billboardSprite.texture)
+      if (e.billboardSprite.visible) drawBillboard(e)
     })
 
     // GUI meters
