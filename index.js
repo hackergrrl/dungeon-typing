@@ -505,6 +505,7 @@ function Inventory (e) {
     i.item.owner = e
     i.removeComponent(Physics)
     this.contents.push(i)
+    e.emit('pickup-item', i)
     return true
   }
 }
@@ -828,6 +829,9 @@ function createLevel (level) {
       player.mana.amount = player.mana.max
       // TODO: increase melee damage?
       notify('    Welcome to Level ' + player.level.level + '    ')
+    })
+    player.on('pickup-item', function (i) {
+      createGuiLabel('1 apple', 64, screenHeight - 32, [1,1,1,1])
     })
   }
 
