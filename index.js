@@ -25,6 +25,9 @@ var camera = {
   shakeVel: [0, 0, 0]
 }
 
+var inventoryLabels = []
+var inventorySelected = null
+
 var lexicon = {
   'hit':   hitCommand.bind(null, '2d3+0'),
   'slam':  slamCommand.bind(null, '1d5+2'),
@@ -575,6 +578,10 @@ document.body.onkeypress = function (ev) {
   if (plr.health.amount <= 0) return
 
   var k = ev.key
+  if (/^[0-9]$/.test(k)) {
+    plr.emit('select-item', Number(k))
+    return
+  }
   if (k.startsWith('Arrow')) return
   var txt = world.createEntity()
   txt.addComponent(Text3D)
@@ -836,7 +843,19 @@ function createLevel (level) {
       notify('    Welcome to Level ' + player.level.level + '    ')
     })
     player.on('pickup-item', function (i) {
-      createGuiLabel(String(player.inventory.contents.length) + ' ' + i.identity.name, 64, screenHeight - 32, [1,1,1,1])
+      var idx = player.inventory.contents.length
+      inventoryLabels.push(createGuiLabel(String(idx) + ' ' + i.identity.name, idx * 128 - 32, screenHeight - 32, [1,1,1,1]))
+    })
+    player.on('select-item', function (idx) {
+      if (inventorySelected !== null) {
+        var label = inventoryLabels[inventorySelected]
+        label.text2D.draw.color = [1, 1, 1, 1]
+      }
+      if (inventoryLabels[idx-1]) {
+        var label = inventoryLabels[idx-1]
+        label.text2D.draw.color = [0.25, 1.0, 0.25, 1]
+        inventorySelected = idx-1
+      }
     })
   }
 
@@ -880,7 +899,33 @@ function createLevel (level) {
   apple.physics.height = 3
   apple.physics.pos.x = player.physics.pos.x
   apple.physics.pos.y = player.physics.pos.y - 2
-  apple.physics.pos.z = player.physics.pos.z + 1
+  apple.physics.pos.z = player.physics.pos.z + 2
+
+  var apple = world.createEntity()
+  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
+  apple.billboardSprite.scale = 0.5
+  apple.addComponent(Physics)
+  apple.addComponent(Item)
+  apple.addComponent(Identity, 'apple')
+  apple.addComponent(TextHolder)
+  apple.addComponent(Floaty)
+  apple.physics.height = 3
+  apple.physics.pos.x = player.physics.pos.x - 2
+  apple.physics.pos.y = player.physics.pos.y - 2
+  apple.physics.pos.z = player.physics.pos.z
+
+  var apple = world.createEntity()
+  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
+  apple.billboardSprite.scale = 0.5
+  apple.addComponent(Physics)
+  apple.addComponent(Item)
+  apple.addComponent(Identity, 'apple')
+  apple.addComponent(TextHolder)
+  apple.addComponent(Floaty)
+  apple.physics.height = 3
+  apple.physics.pos.x = player.physics.pos.x + 2
+  apple.physics.pos.y = player.physics.pos.y - 2
+  apple.physics.pos.z = player.physics.pos.z - 2
 
   while (true) {
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
