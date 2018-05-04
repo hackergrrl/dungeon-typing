@@ -960,7 +960,7 @@ function run (assets) {
   process.nextTick(function () {
     var x = 24
     Object.keys(lexicon).forEach(function (word) {
-      createGuiLabel(word, x, screenHeight - 32, [1, 1, 1, 1])
+      createGuiLabel(word, x, 32, [1, 1, 1, 1])
       x += word.length * 16 + 32
     })
 
