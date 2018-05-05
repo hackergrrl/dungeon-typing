@@ -14,11 +14,8 @@ var u = require('./utils')
 
 var screenWidth, screenHeight
 var tick = 0
-
 var textures = {}
-
 var currentLevel = 1
-
 var camera = {
   pos: [0, -2, -10],
   rot: [0, 0, 0],
@@ -26,10 +23,18 @@ var camera = {
   shakeVel: [0, 0, 0]
 }
 
+var letters = 0
+var lastLetter = 0
+
 var inventoryLabels = []
 var inventorySelected = null
 var lexiconLabels = []
 var playerLexicon = ['hit', 'open', 'close', 'get']
+
+var projection
+
+var world
+var map
 
 var lexicon = {
   'hit':   hitCommand.bind(null, '2d3+0'),
@@ -40,21 +45,12 @@ var lexicon = {
   'throw': throwCommand,
 }
 
-var letters = 0
-var lastLetter = 0
-
 var systems = [
   updatePhysics,
   updateCamera,
   updateMobAI,
   updateParticles,
-  function () { world.queryComponents([Floaty, Physics]).forEach(function (e) { e.floaty.update() }) },
 ]
-
-var projection
-
-var world
-var map
 
 function canSee (a, b) {
   var x = a.physics.pos.x
@@ -289,15 +285,6 @@ function Physics () {
 
 function PhysicsCone (e, radius) {
   this.radius = radius || 4
-}
-
-function Floaty (e) {
-  this.update = function () {
-    var now = new Date().getTime()
-    e.physics.gravity = 0
-    e.physics.vel.y = 0
-    e.physics.pos.y += Math.sin(now * 0.003) * 0.002
-  }
 }
 
 function Identity (e, name, desc) {
