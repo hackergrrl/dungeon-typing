@@ -27,6 +27,8 @@ var camera = {
 
 var inventoryLabels = []
 var inventorySelected = null
+var lexiconLabels = []
+var playerLexicon = ['hit', 'open', 'close', 'get']
 
 var lexicon = {
   'hit':   hitCommand.bind(null, '2d3+0'),
@@ -34,6 +36,7 @@ var lexicon = {
   'open':  openCommand,
   'close': closeCommand,
   'get': getCommand,
+  'throw': throwCommand,
 }
 
 var letters = 0
@@ -150,7 +153,7 @@ function spawnParticleHit (at) {
 
 function checkLexicon (plr, mob, text) {
   text = text.toLowerCase()
-  var words = Object.keys(lexicon)
+  var words = playerLexicon
 
   for (var j=0; j < words.length; j++) {
     var word = words[j]
@@ -248,6 +251,24 @@ function getCommand (user, target) {
   if (!target.item) return false
   if (physicsDistance(user, target) > 5) return false
   return user.inventory.pickup(target)
+}
+
+function throwCommand (user, target) {
+  var item = user.inventory.contents[inventorySelected]
+  if (!item) return false
+
+  // item.addComponent(Physics)
+  // var yrot = camera.rot[1]
+  // item.physics.pos.x = user.physics.pos.x + Math.sin(yrot)
+  // item.physics.pos.z = user.physics.pos.z - Math.cos(yrot)
+  // item.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.3
+  // item.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.3
+  // item.physics.pos.y = 3
+  // item.physics.vel.x = user.physics.vel.x + Math.sin(yrot) * 0.8
+  // item.physics.vel.z = user.physics.vel.z - Math.cos(yrot) * 0.8
+  // item.physics.vel.y = user.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
+  // item.billboardSprite.visible = true
+  return false
 }
 
 function physicsDistance (a, b) {
@@ -509,6 +530,7 @@ function TextHolder () {
 
 function Item (e) {
   this.owner = null
+  this.lexicon = {}
 }
 
 function Inventory (e) {
@@ -856,6 +878,7 @@ function createLevel (level) {
       i.addComponent(Sprite2D, x + 24, y)
     })
     player.on('select-item', function (idx) {
+      if (idx-1 === inventorySelected) return
       if (inventorySelected !== null) {
         var label = inventoryLabels[inventorySelected]
         label.text2D.draw.color = [1, 1, 1, 1]
@@ -866,6 +889,19 @@ function createLevel (level) {
         label.text2D.draw.color = [0.25, 1.0, 0.25, 1]
         label.text2D.y -= 8
         inventorySelected = idx-1
+        player.inventory.contents[idx-1].item.lexicon.forEach(function (word) {
+          playerLexicon.push(word)
+          var x = 16
+          var prev = lexiconLabels[lexiconLabels.length-1]
+          if (prev) {
+            var x = prev.text2D.x
+            x += (prev.text2D.text.length/2) * 12 + 8
+          }
+          x += (word.length/2) * 12
+          var txt = createGuiLabel(word, x, 24, [0.25, 1, 0.25, 1])
+          txt.text2D.scale = 0.75
+          lexiconLabels.push(txt)
+        })
       }
     })
   }
@@ -907,36 +943,11 @@ function createLevel (level) {
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
   apple.addComponent(Floaty)
+  apple.item.lexicon = ['throw', 'EAT']
   apple.physics.height = 3
   apple.physics.pos.x = player.physics.pos.x
   apple.physics.pos.y = player.physics.pos.y - 2
   apple.physics.pos.z = player.physics.pos.z + 2
-
-  var apple = world.createEntity()
-  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
-  apple.billboardSprite.scale = 0.5
-  apple.addComponent(Physics)
-  apple.addComponent(Item)
-  apple.addComponent(Identity, 'apple')
-  apple.addComponent(TextHolder)
-  apple.addComponent(Floaty)
-  apple.physics.height = 3
-  apple.physics.pos.x = player.physics.pos.x - 2
-  apple.physics.pos.y = player.physics.pos.y - 2
-  apple.physics.pos.z = player.physics.pos.z
-
-  var apple = world.createEntity()
-  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
-  apple.billboardSprite.scale = 0.5
-  apple.addComponent(Physics)
-  apple.addComponent(Item)
-  apple.addComponent(Identity, 'apple')
-  apple.addComponent(TextHolder)
-  apple.addComponent(Floaty)
-  apple.physics.height = 3
-  apple.physics.pos.x = player.physics.pos.x + 2
-  apple.physics.pos.y = player.physics.pos.y - 2
-  apple.physics.pos.z = player.physics.pos.z - 2
 
   while (true) {
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
@@ -1079,10 +1090,11 @@ function run (assets) {
 
   process.nextTick(function () {
     var x = 16
-    Object.keys(lexicon).forEach(function (word) {
+    playerLexicon.forEach(function (word) {
       x += (word.length/2) * 12
       var txt = createGuiLabel(word, x, 24, [1, 1, 1, 1])
       txt.text2D.scale = 0.75
+      lexiconLabels.push(txt)
       x += (word.length/2) * 12 + 8
     })
 
