@@ -80,7 +80,7 @@ function canSee (a, b) {
     for (var i=0; i < doors.length; i++) {
       var d = doors[i]
       if (d.door.open) continue
-      var dist = xyzDistance(d, x, 2, z)
+      var dist = u.xyzDistance(d, x, 2, z)
       if (dist <= d.physics.width/2) return false
     }
 
@@ -153,25 +153,12 @@ function checkLexicon (plr, mob, text) {
   return false
 }
 
-function rollDice (str) {
-  var rolls = Number(str.split('d')[0])
-  var sides = Number(str.split('+')[0].split('d')[1])
-  var add = Number(str.split('+')[1])
-
-  var res = add
-  for (var i=0; i < rolls; i++) {
-    res += Math.floor(Math.random() * sides) + 1
-  }
-
-  return res
-}
-
 function queryInCircle (components, center, radius) {
   if (components.indexOf(Physics) === -1) return []
 
   return world.queryComponents(components)
     .filter(function (e) {
-      return xyzDistance(e, center[0], center[1], center[2]) <= radius
+      return u.xyzDistance(e, center[0], center[1], center[2]) <= radius
     })
 }
 
@@ -181,13 +168,13 @@ function slamCommand (dice, attacker, target) {
     var center = u.vecify(target.physics.pos)
     queryInCircle([Physics, Health], center, 4).forEach(function (e) {
       spawnParticleStrike(u.vecify(e.physics.pos))
-      e.health.damage(rollDice(dice), attacker)
+      e.health.damage(u.rollDice(dice), attacker)
     })
   }
 }
 
 function hitCommand (dice, attacker, target) {
-  var dmg = rollDice(dice)
+  var dmg = u.rollDice(dice)
 
   var player = world.queryTag('player')[0]
   var mult = 1
@@ -199,7 +186,7 @@ function hitCommand (dice, attacker, target) {
     return true
   }
 
-  var dist = physicsDistance(attacker, target)
+  var dist = u.physicsDistance(attacker, target)
   if (dist <= 4) {
     camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
     camera.shakeVel[1] = 0
@@ -245,7 +232,7 @@ function closeCommand (user, target) {
 
 function getCommand (user, target) {
   if (!target.item) return false
-  if (physicsDistance(user, target) > 5) return false
+  if (u.physicsDistance(user, target) > 5) return false
   return user.inventory.pickup(target)
 }
 
@@ -267,24 +254,10 @@ function throwCommand (user, target) {
   return false
 }
 
-function physicsDistance (a, b) {
-  var dx = b.physics.pos.x - a.physics.pos.x
-  var dy = b.physics.pos.y - a.physics.pos.y
-  var dz = b.physics.pos.z - a.physics.pos.z
-  return Math.sqrt(dx*dx + dy*dy + dz*dz)
-}
-
-function xyzDistance (a, x, y, z) {
-  var dx = x - a.physics.pos.x
-  var dy = y - a.physics.pos.y
-  var dz = z - a.physics.pos.z
-  return Math.sqrt(dx*dx + dy*dy + dz*dz)
-}
-
 function getObjectAt (x, y, z, radius) {
   var match
   world.queryComponents([Physics]).forEach(function (e) {
-    var dist = xyzDistance(e, x, y, z)
+    var dist = u.xyzDistance(e, x, y, z)
     if (dist <= radius) {
       match = e
     }
@@ -1300,7 +1273,7 @@ function run (assets) {
 
     // Draw billboard sprites
     var bills = world.queryComponents([BillboardSprite, Physics])
-    bills.sort(distCmp.bind(null, plr))
+    bills.sort(u.distCmp.bind(null, plr))
     bills.forEach(function (e) {
       if (e.billboardSprite.visible) drawBillboardEntity(e)
     })
@@ -1361,10 +1334,4 @@ function run (assets) {
       drawSprite(e, e.sprite2D.x, e.sprite2D.y)
     })
   })
-}
-
-function distCmp (plr, a, b) {
-  var aDist = physicsDistance(plr, a)
-  var bDist = physicsDistance(plr, b)
-  return bDist - aDist
 }
