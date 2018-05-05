@@ -1,15 +1,16 @@
 var regl = require('regl')()
+var vec3 = require('gl-vec3')
 var mat4 = require('gl-mat4')
 var key = require('key-pressed')
 var Voxel = require('./voxel')
 var dungeon = require('dungeon-generator')
 var Sky = require('./sky')
 var nano = require('nano-ecs')
-var vec3 = require('gl-vec3')
 var Billboard = require('./billboard')
 var Text = require('./text')
 var ParticleSystem = require('./particle')
 var Meter = require('./meter')
+var u = require('./utils')
 
 var screenWidth, screenHeight
 var tick = 0
@@ -188,9 +189,9 @@ function queryInCircle (components, center, radius) {
 // Close a door. Really hard.
 function slamCommand (dice, attacker, target) {
   if (closeCommand(attacker, target)) {
-    var center = vecify(target.physics.pos)
+    var center = u.vecify(target.physics.pos)
     queryInCircle([Physics, Health], center, 4).forEach(function (e) {
-      spawnParticleStrike(vecify(e.physics.pos))
+      spawnParticleStrike(u.vecify(e.physics.pos))
       e.health.damage(rollDice(dice), attacker)
     })
   }
@@ -218,9 +219,9 @@ function hitCommand (dice, attacker, target) {
     target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
     target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
     if (mult === 1) {
-      spawnParticleStrike(vecify(target.physics.pos))
+      spawnParticleStrike(u.vecify(target.physics.pos))
     } else {
-      spawnParticleBlood(vecify(target.physics.pos))
+      spawnParticleBlood(u.vecify(target.physics.pos))
     }
     target.health.damage(dmg, attacker)
     return true
@@ -720,7 +721,7 @@ function updatePhysics (world) {
     if (e.physicsCone) {
       world.queryComponents([Physics, PhysicsCone]).forEach(function (d) {
         if (e.id === d.id) return
-        var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+        var toTarget = vec3.sub(vec3.create(), u.vecify(e.physics.pos), u.vecify(d.physics.pos))
 
         // fix doors on top of doors (not pretty)
         if (e.door && d.door) {
@@ -730,7 +731,7 @@ function updatePhysics (world) {
           }
         }
 
-        var toTarget = vec3.sub(vec3.create(), vecify(e.physics.pos), vecify(d.physics.pos))
+        var toTarget = vec3.sub(vec3.create(), u.vecify(e.physics.pos), u.vecify(d.physics.pos))
         if (vec3.length(toTarget) <= d.physicsCone.radius) {
           vec3.normalize(toTarget, toTarget)
           vec3.scale(toTarget, toTarget, 0.01)
@@ -867,7 +868,7 @@ function createLevel (level) {
       console.log('you are remarkably dead')
     })
     player.on('level-up', function () {
-      spawnParticleLevelUp(vecify(player.physics.pos))
+      spawnParticleLevelUp(u.vecify(player.physics.pos))
       player.health.max = Math.floor(player.health.max * 1.1)
       player.health.amount = player.health.max
       player.mana.max = Math.floor(player.mana.max * 1.1)
@@ -947,7 +948,6 @@ function createLevel (level) {
   apple.addComponent(Item)
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
-  // apple.addComponent(Floaty)
   apple.item.lexicon = ['throw']
   apple.physics.height = 3
   apple.physics.pos.x = player.physics.pos.x
@@ -1062,7 +1062,7 @@ function updateLights (lights) {
           var lightPos = vec3.fromValues(light.pos.x, light.pos.y, light.pos.z)
 	  n++
           map.lightBoxAdd(i, k, j, function (pos, normal) {
-            var br = pointLight(lightPos, light.intensity, pos, normal)
+            var br = u.pointLight(lightPos, light.intensity, pos, normal)
             return [br * 226/255, br * 188/255, br * 134/255]
           })
         })
@@ -1125,7 +1125,7 @@ function run (assets) {
 
   function drawBillboardEntity (e) {
     var tex = textures[e.billboardSprite.texture]
-    var at = vecify(e.physics.pos)
+    var at = u.vecify(e.physics.pos)
     var scale = e.billboardSprite.scale
     var model = mat4.create()
     mat4.identity(model)
