@@ -943,7 +943,7 @@ function createLevel (level) {
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
   apple.addComponent(Floaty)
-  apple.item.lexicon = ['throw', 'EAT']
+  apple.item.lexicon = ['throw']
   apple.physics.height = 3
   apple.physics.pos.x = player.physics.pos.x
   apple.physics.pos.y = player.physics.pos.y - 2
