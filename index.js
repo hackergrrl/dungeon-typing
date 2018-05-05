@@ -457,6 +457,7 @@ function Text2D () {
     this.text = string
   }
 
+  this.scale = 1
   this.x = this.y = 0
   this.draw = undefined
 }
@@ -1077,10 +1078,12 @@ function run (assets) {
   createLevel(1)
 
   process.nextTick(function () {
-    var x = 24
+    var x = 16
     Object.keys(lexicon).forEach(function (word) {
-      createGuiLabel(word, x, 32, [1, 1, 1, 1])
-      x += word.length * 16 + 32
+      x += (word.length/2) * 12
+      var txt = createGuiLabel(word, x, 24, [1, 1, 1, 1])
+      txt.text2D.scale = 0.75
+      x += (word.length/2) * 12 + 8
     })
 
     notify('Welcome to DUNGEON TYPIST', function () {
@@ -1149,12 +1152,12 @@ function run (assets) {
     })
   }
 
-  function drawText2D (text, x, y) {
+  function drawText2D (text, x, y, scale) {
     var proj = mat4.ortho(mat4.create(), 0, screenWidth, screenHeight, 0, -1, 1)
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, -0.2))
-    mat4.scale(model, model, vec3.fromValues(25, 25, 25))
+    mat4.scale(model, model, vec3.fromValues(scale * 25, scale * 25, scale * 25))
     text({
       projection: proj,
       view: mat4.create(),
@@ -1317,7 +1320,7 @@ function run (assets) {
 
     // GUI text
     world.queryComponents([Text2D]).forEach(function (e) {
-      drawText2D(e.text2D.draw, e.text2D.x, e.text2D.y)
+      drawText2D(e.text2D.draw, e.text2D.x, e.text2D.y, e.text2D.scale)
     })
 
     // Draw particle effects
