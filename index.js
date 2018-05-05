@@ -837,8 +837,6 @@ function createLevel (level) {
       i.addComponent(Sprite2D, x + 24, y)
     })
     player.on('select-item', function (idx) {
-      if (idx-1 === inventorySelected) return
-
       // deselect previous item
       if (inventorySelected !== null) {
         var label = inventoryLabels[inventorySelected]
@@ -846,9 +844,14 @@ function createLevel (level) {
         label.text2D.y += 8
         var item = player.inventory.contents[inventorySelected].item
         item.lexicon.forEach(function (word) {
-          player.player.lexicon.slice(player.player.lexicon.indexOf(word), 1)
+          player.player.lexicon.splice(player.player.lexicon.indexOf(word), 1)
           guiLexicon.removeWord(word)
         })
+      }
+
+      if (idx-1 === inventorySelected) {
+        inventorySelected = null
+        return
       }
 
       // select new item
@@ -904,7 +907,20 @@ function createLevel (level) {
   apple.item.lexicon = ['throw']
   apple.physics.height = 3
   apple.physics.pos.x = player.physics.pos.x
-  apple.physics.pos.y = player.physics.pos.y - 2
+  apple.physics.pos.y = player.physics.pos.y + 2
+  apple.physics.pos.z = player.physics.pos.z - 2
+
+  var apple = world.createEntity()
+  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
+  apple.billboardSprite.scale = 0.5
+  apple.addComponent(Physics)
+  apple.addComponent(Item)
+  apple.addComponent(Identity, 'apple')
+  apple.addComponent(TextHolder)
+  apple.item.lexicon = ['omnom']
+  apple.physics.height = 3
+  apple.physics.pos.x = player.physics.pos.x
+  apple.physics.pos.y = player.physics.pos.y + 2
   apple.physics.pos.z = player.physics.pos.z + 2
 
   while (true) {

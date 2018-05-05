@@ -9,7 +9,6 @@ function GuiLexicon (regl) {
 
   this.regl = regl
   this.labels = []
-  this.sprites = []
 }
 
 GuiLexicon.prototype.addWord = function (word, color) {
@@ -32,6 +31,13 @@ GuiLexicon.prototype.addWord = function (word, color) {
 }
 
 GuiLexicon.prototype.removeWord = function (word) {
+  for (var i=0; i < this.labels.length; i++) {
+    if (this.labels[i].text === word) {
+      this.labels.splice(i, 1)
+      return true
+    }
+  }
+  return false
 }
 
 GuiLexicon.prototype.draw = function (projectionScreen) {
