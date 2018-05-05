@@ -203,6 +203,12 @@ function hitCommand (dice, attacker, target) {
   var mult = 1
   if (attacker !== player) mult = -0.5
 
+  if (!target.health && target.physics) {
+    target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
+    target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
+    return true
+  }
+
   var dist = physicsDistance(attacker, target)
   if (dist <= 4) {
     camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
@@ -941,7 +947,7 @@ function createLevel (level) {
   apple.addComponent(Item)
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
-  apple.addComponent(Floaty)
+  // apple.addComponent(Floaty)
   apple.item.lexicon = ['throw']
   apple.physics.height = 3
   apple.physics.pos.x = player.physics.pos.x
