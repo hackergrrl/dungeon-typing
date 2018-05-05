@@ -31,7 +31,8 @@ var inventorySelected = null
 var lexiconLabels = []
 var playerLexicon = ['hit', 'open', 'close', 'get']
 
-var projection
+var projectionWorld
+var projectionScreen
 
 var world
 var map
@@ -1089,13 +1090,12 @@ function run (assets) {
       frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
       frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
       view: view,
-      projection: projection,
+      projection: projectionWorld,
       texture: tex.texture
     })
   }
 
   function drawSprite (e, x, y) {
-    var proj = mat4.ortho(mat4.create(), 0, screenWidth, screenHeight, 0, -1, 1)
     var tex = textures[e.billboardSprite.texture]
     var at = vec3.fromValues(x, y, -0.2)
     var scale = 25
@@ -1106,7 +1106,7 @@ function run (assets) {
     drawBillboard({
       model: model,
       view: mat4.create(),
-      projection: proj,
+      projection: projectionScreen,
       framesWide: 1 / e.billboardSprite.framesWide,
       framesTall: 1 / e.billboardSprite.framesTall,
       frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
@@ -1116,13 +1116,12 @@ function run (assets) {
   }
 
   function drawText2D (text, x, y, scale) {
-    var proj = mat4.ortho(mat4.create(), 0, screenWidth, screenHeight, 0, -1, 1)
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, -0.2))
     mat4.scale(model, model, vec3.fromValues(scale * 25, scale * 25, scale * 25))
     text({
-      projection: proj,
+      projection: projectionScreen,
       view: mat4.create(),
       model: model
     })
@@ -1136,7 +1135,7 @@ function run (assets) {
     var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
     mat4.rotateY(model, model, rot)
     text({
-      projection: projection,
+      projection: projectionWorld,
       view: view,
       model: model
     })
@@ -1165,11 +1164,14 @@ function run (assets) {
     // Update all systems
     systems.forEach(function (s) { s(world, state) })
 
-    projection = mat4.perspective([],
-                                  Math.PI / 3,
-                                  state.viewportWidth / state.viewportHeight,
-                                  0.01,
-                                  1000)
+    projectionWorld = mat4.perspective([],
+                                       Math.PI / 3,
+                                       state.viewportWidth / state.viewportHeight,
+                                       0.01, 1000)
+    projectionScreen = mat4.ortho(mat4.create(),
+                                  0, screenWidth,
+                                  screenHeight, 0,
+                                  -1, 1)
 
     // Sync camera to view matrix
     mat4.identity(view)
@@ -1189,7 +1191,7 @@ function run (assets) {
 
     // Draw voxel world
     map.draw({
-      projection: projection,
+      projection: projectionWorld,
       view: view
     })
 
@@ -1307,7 +1309,7 @@ function run (assets) {
     world.queryComponents([ParticleEffect]).forEach(function (e) {
       var commands = e.particleEffect.data.map(function (d) {
         return {
-          projection: projection,
+          projection: projectionWorld,
           view: view,
           model: d.mat,
           color: e.particleEffect.color
