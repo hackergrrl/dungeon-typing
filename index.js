@@ -12,6 +12,7 @@ var ParticleSystem = require('./particle')
 var Meter = require('./meter')
 var u = require('./utils')
 var GuiLexicon = require('./gui_lexicon')
+var GuiInventory = require('./gui_inventory')
 
 var screenWidth, screenHeight
 var tick = 0
@@ -28,6 +29,7 @@ var letters = 0
 var lastLetter = 0
 
 var guiLexicon = new GuiLexicon(regl)
+var guiInventory = new GuiInventory(regl)
 
 var inventoryLabels = []
 var inventorySelected = null
@@ -833,8 +835,7 @@ function createLevel (level) {
       var idx = player.inventory.contents.length
       var x = (idx - 1) * 88 + 26
       var y = screenHeight - 32
-      inventoryLabels.push(createGuiLabel(String(idx), x, y, [1,1,1,1]))
-      i.addComponent(Sprite2D, x + 24, y)
+      guiInventory.addItem(i.id, textures[i.billboardSprite.texture])
     })
     player.on('select-item', function (idx) {
       // deselect previous item
@@ -1335,6 +1336,8 @@ function run (assets) {
     })
 
     guiLexicon.draw(projectionScreen)
+
+    guiInventory.draw(projectionScreen, screenHeight)
 
     // Draw inventory icons
     world.queryComponents([BillboardSprite, Sprite2D]).forEach(function (e) {
