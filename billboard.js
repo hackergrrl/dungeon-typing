@@ -67,13 +67,7 @@ module.exports = function (regl) {
     },
 
     uniforms: {
-      projection: function (state) {
-        return mat4.perspective([],
-                        Math.PI / 3,
-                        state.viewportWidth / state.viewportHeight,
-                        0.01,
-                        1000)
-      },
+      projection: regl.prop('projection'),
       view: regl.prop('view'),
       model: regl.prop('model'),
       texture: regl.prop('texture'),

@@ -357,6 +357,11 @@ function MobAI (e) {
   })
 }
 
+function Sprite2D (e, x, y) {
+  this.x = x
+  this.y = y
+}
+
 function BillboardSprite (e, tname, frameSize) {
   this.texture = null
   this.frameX = 0
@@ -844,16 +849,21 @@ function createLevel (level) {
     })
     player.on('pickup-item', function (i) {
       var idx = player.inventory.contents.length
-      inventoryLabels.push(createGuiLabel(String(idx) + ' ' + i.identity.name, idx * 128 - 32, screenHeight - 32, [1,1,1,1]))
+      var x = (idx - 1) * 88 + 26
+      var y = screenHeight - 32
+      inventoryLabels.push(createGuiLabel(String(idx), x, y, [1,1,1,1]))
+      i.addComponent(Sprite2D, x + 24, y)
     })
     player.on('select-item', function (idx) {
       if (inventorySelected !== null) {
         var label = inventoryLabels[inventorySelected]
         label.text2D.draw.color = [1, 1, 1, 1]
+        label.text2D.y += 8
       }
       if (inventoryLabels[idx-1]) {
         var label = inventoryLabels[idx-1]
         label.text2D.draw.color = [0.25, 1.0, 0.25, 1]
+        label.text2D.y -= 8
         inventorySelected = idx-1
       }
     })
@@ -1094,7 +1104,7 @@ function run (assets) {
   var mpMeter = Meter(regl, [0.83, 0.8], [0, 0,    1, 0.75])
   var xpMeter = Meter(regl, [0.91, 0.8], [0, 0.65, 0, 0.5])
 
-  var billboard = Billboard(regl, 2, 1)
+  var billboard = Billboard(regl)
 
   function drawBillboard (e) {
     var tex = textures[e.billboardSprite.texture]
@@ -1113,6 +1123,28 @@ function run (assets) {
       frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
       frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
       view: view,
+      projection: projection,
+      texture: tex.texture
+    })
+  }
+
+  function drawSprite (e, x, y) {
+    var proj = mat4.ortho(mat4.create(), 0, screenWidth, screenHeight, 0, -1, 1)
+    var tex = textures[e.billboardSprite.texture]
+    var at = vec3.fromValues(x, y, -0.2)
+    var scale = 25
+    var model = mat4.create()
+    mat4.identity(model)
+    mat4.translate(model, model, at)
+    mat4.scale(model, model, vec3.fromValues(scale, -scale, scale))
+    billboard({
+      model: model,
+      view: mat4.create(),
+      projection: proj,
+      framesWide: 1 / e.billboardSprite.framesWide,
+      framesTall: 1 / e.billboardSprite.framesTall,
+      frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
+      frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
       texture: tex.texture
     })
   }
@@ -1299,6 +1331,11 @@ function run (assets) {
         }
       })
       e.particleEffect.draw(commands)
+    })
+
+    // Draw inventory icons
+    world.queryComponents([BillboardSprite, Sprite2D]).forEach(function (e) {
+      drawSprite(e, e.sprite2D.x, e.sprite2D.y)
     })
   })
 }
