@@ -18,25 +18,36 @@ GuiInventory.prototype.addItem = function (id, texture) {
   this.items.push({
     id: id,
     texture: texture,
-    color: [1,1,1,1]
+    color: [1,1,1,1],
+    x: 0,
+    y: 0
   })
   this.rebuild()
 }
 
 GuiInventory.prototype.selectItem = function (num) {
-  this.selected = num
-  this.items[num-1].y -= 8
-  this.items[num-1].color = [0, 1, 0, 1]
-
   // TODO: deselect previous item
+  if (this.selected !== null) {
+    this.items[this.selected].y += 8
+    this.items[this.selected].drawLabel.color = [1, 1, 1, 1]
+  }
+  
+  if (this.selected === num - 1) {
+    this.selected = null
+    return
+  }
+
+  this.selected = num - 1
+  this.items[num-1].y -= 8
+  this.items[num-1].drawLabel.color = [0, 1, 0, 1]
 }
 
 GuiInventory.prototype.rebuild = function () {
   for (var i=0; i < this.items.length; i++) {
     var item = this.items[i]
     item.drawLabel = Text(this.regl, String(i+1), item.color)
-    item.x = i * 32 + 24
-    item.y = 200
+    item.x = i * 79 + 24
+    item.y = 0
   }
 }
 
@@ -57,7 +68,7 @@ GuiInventory.prototype.draw = function (projectionScreen, screenHeight) {
   var self = this
   this.items.forEach(function (item) {
     var tex = item.texture
-    var at = vec3.fromValues(item.x, screenHeight - 32, -0.2)
+    var at = vec3.fromValues(item.x, item.y + (screenHeight - 32), -0.2)
     var scale = 25
     var model = mat4.create()
 
@@ -72,6 +83,7 @@ GuiInventory.prototype.draw = function (projectionScreen, screenHeight) {
 
     at[0] += 19
     at[1] += 3
+    at[1] -= item.y
     mat4.identity(model)
     mat4.translate(model, model, at)
     mat4.scale(model, model, vec3.fromValues(scale, -scale, scale))

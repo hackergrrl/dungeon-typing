@@ -31,7 +31,6 @@ var lastLetter = 0
 var guiLexicon = new GuiLexicon(regl)
 var guiInventory = new GuiInventory(regl)
 
-var inventoryLabels = []
 var inventorySelected = null
 
 var projectionWorld
@@ -840,9 +839,6 @@ function createLevel (level) {
     player.on('select-item', function (idx) {
       // deselect previous item
       if (inventorySelected !== null) {
-        var label = inventoryLabels[inventorySelected]
-        label.text2D.draw.color = [1, 1, 1, 1]
-        label.text2D.y += 8
         var item = player.inventory.contents[inventorySelected].item
         item.lexicon.forEach(function (word) {
           player.player.lexicon.splice(player.player.lexicon.indexOf(word), 1)
@@ -850,22 +846,19 @@ function createLevel (level) {
         })
       }
 
+      guiInventory.selectItem(idx)
+
       if (idx-1 === inventorySelected) {
         inventorySelected = null
         return
       }
 
       // select new item
-      if (inventoryLabels[idx-1]) {
-        var label = inventoryLabels[idx-1]
-        label.text2D.draw.color = [0.25, 1.0, 0.25, 1]
-        label.text2D.y -= 8
-        inventorySelected = idx-1
-        player.inventory.contents[idx-1].item.lexicon.forEach(function (word) {
-          player.player.lexicon.push(word)
-          guiLexicon.addWord(word, [0,1,0,1])
-        })
-      }
+      inventorySelected = idx-1
+      player.inventory.contents[idx-1].item.lexicon.forEach(function (word) {
+        player.player.lexicon.push(word)
+        guiLexicon.addWord(word, [0,1,0,1])
+      })
     })
   }
 
