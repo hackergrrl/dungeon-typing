@@ -1113,10 +1113,8 @@ function run (assets) {
                         [0, 1, 0])
 
   var drawSky = Sky(regl)
-
   var drawMeter = Meter(regl)
   var drawParticles = ParticleEffect(regl)
-
   var drawBillboard = Billboard(regl)
 
   function drawBillboardEntity (e) {
