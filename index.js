@@ -1115,11 +1115,9 @@ function run (assets) {
 
   var sky = Sky(regl)
 
-  var hpMeter = Meter(regl, [0.75, 0.8], [1, 0,    0, 0.75])
-  var mpMeter = Meter(regl, [0.83, 0.8], [0, 0,    1, 0.75])
-  var xpMeter = Meter(regl, [0.91, 0.8], [0, 0.65, 0, 0.5])
+  var drawMeter = Meter(regl)
 
-  var billboard = Billboard(regl)
+  var drawBillboard = Billboard(regl)
 
   function drawBillboard (e) {
     var tex = textures[e.billboardSprite.texture]
@@ -1131,7 +1129,7 @@ function run (assets) {
     mat4.scale(model, model, vec3.fromValues(scale, scale, scale))
     var rot = -Math.atan2(-camera.pos[2] - at[2], -camera.pos[0] - at[0]) + Math.PI/2
     mat4.rotateY(model, model, rot)
-    billboard({
+    drawBillboard({
       model: model,
       framesWide: 1 / e.billboardSprite.framesWide,
       framesTall: 1 / e.billboardSprite.framesTall,
@@ -1152,7 +1150,7 @@ function run (assets) {
     mat4.identity(model)
     mat4.translate(model, model, at)
     mat4.scale(model, model, vec3.fromValues(scale, -scale, scale))
-    billboard({
+    drawBillboard({
       model: model,
       view: mat4.create(),
       projection: proj,
@@ -1319,16 +1317,38 @@ function run (assets) {
       if (e.billboardSprite.visible) drawBillboard(e)
     })
 
-    // GUI meters
+    // hp meter
     var hp = plr.health.amount / plr.health.max
-    var mp = plr.mana.amount / plr.mana.max
     var hpDanger = (1 - hp) * 0.4
+    drawMeter({
+      at: [0.75, 0.8],
+      segs: Math.floor(plr.health.amount * 0.5),
+      maxSegs: Math.floor(plr.health.max * 0.5),
+      tick: state.tick,
+      danger: hpDanger,
+      color: [1, 0, 0, 0.75],
+    })
+    // mp meter
+    var mp = plr.mana.amount / plr.mana.max
     var mpDanger = (1 - mp) * 0.4
-    hpMeter(Math.floor(plr.health.amount * 0.5), Math.floor(plr.health.max * 0.5), state.tick, hpDanger)
-    mpMeter(Math.floor(plr.mana.amount * 0.5), Math.floor(plr.mana.max * 0.5), state.tick, mpDanger)
+    drawMeter({
+      at: [0.83, 0.8],
+      segs: Math.floor(plr.mana.amount * 0.5),
+      maxSegs: Math.floor(plr.mana.max * 0.5),
+      tick: state.tick,
+      danger: mpDanger,
+      color: [0, 0, 1, 0.75]
+    })
+    // xp meter
     var xp = plr.level.xp / plr.level.xpNext
-    xpMeter(Math.floor(xp * 40), 40, state.tick, 0.0)
-
+    drawMeter({
+      at: [0.91, 0.8],
+      segs: Math.floor(xp * 25),
+      maxSegs: 25,
+      tick: state.tick,
+      danger: 0.0,
+      color: [0, 0.65, 0, 0.5]
+    })
 
     // GUI text
     world.queryComponents([Text2D]).forEach(function (e) {
