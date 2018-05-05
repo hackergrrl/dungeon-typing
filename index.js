@@ -29,7 +29,6 @@ var lastLetter = 0
 var inventoryLabels = []
 var inventorySelected = null
 var lexiconLabels = []
-var playerLexicon = ['hit', 'open', 'close', 'get']
 
 var projectionWorld
 var projectionScreen
@@ -140,7 +139,7 @@ function spawnParticleHit (at) {
 
 function checkLexicon (plr, mob, text) {
   text = text.toLowerCase()
-  var words = playerLexicon
+  var words = plr.player.lexicon
 
   for (var j=0; j < words.length; j++) {
     var word = words[j]
@@ -300,6 +299,8 @@ function Player (e) {
       createLevel(currentLevel)
     }
   }
+
+  this.lexicon = ['hit', 'open', 'close', 'get']
 }
 
 function Door () {
@@ -846,7 +847,7 @@ function createLevel (level) {
         label.text2D.y -= 8
         inventorySelected = idx-1
         player.inventory.contents[idx-1].item.lexicon.forEach(function (word) {
-          playerLexicon.push(word)
+          player.player.lexicon.push(word)
           var x = 16
           var prev = lexiconLabels[lexiconLabels.length-1]
           if (prev) {
@@ -1045,7 +1046,7 @@ function run (assets) {
 
   process.nextTick(function () {
     var x = 16
-    playerLexicon.forEach(function (word) {
+    player.player.lexicon.forEach(function (word) {
       x += (word.length/2) * 12
       var txt = createGuiLabel(word, x, 24, [1, 1, 1, 1])
       txt.text2D.scale = 0.75
