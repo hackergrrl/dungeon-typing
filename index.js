@@ -11,6 +11,7 @@ var Text = require('./text')
 var ParticleSystem = require('./particle')
 var Meter = require('./meter')
 var u = require('./utils')
+var GuiLexicon = require('./gui_lexicon')
 
 var screenWidth, screenHeight
 var tick = 0
@@ -26,9 +27,10 @@ var camera = {
 var letters = 0
 var lastLetter = 0
 
+var guiLexicon = new GuiLexicon(regl)
+
 var inventoryLabels = []
 var inventorySelected = null
-var lexiconLabels = []
 
 var projectionWorld
 var projectionScreen
@@ -836,11 +838,20 @@ function createLevel (level) {
     })
     player.on('select-item', function (idx) {
       if (idx-1 === inventorySelected) return
+
+      // deselect previous item
       if (inventorySelected !== null) {
         var label = inventoryLabels[inventorySelected]
         label.text2D.draw.color = [1, 1, 1, 1]
         label.text2D.y += 8
+        var item = player.inventory.contents[inventorySelected].item
+        item.lexicon.forEach(function (word) {
+          player.player.lexicon.slice(player.player.lexicon.indexOf(word), 1)
+          guiLexicon.removeWord(word)
+        })
       }
+
+      // select new item
       if (inventoryLabels[idx-1]) {
         var label = inventoryLabels[idx-1]
         label.text2D.draw.color = [0.25, 1.0, 0.25, 1]
@@ -848,16 +859,7 @@ function createLevel (level) {
         inventorySelected = idx-1
         player.inventory.contents[idx-1].item.lexicon.forEach(function (word) {
           player.player.lexicon.push(word)
-          var x = 16
-          var prev = lexiconLabels[lexiconLabels.length-1]
-          if (prev) {
-            var x = prev.text2D.x
-            x += (prev.text2D.text.length/2) * 12 + 8
-          }
-          x += (word.length/2) * 12
-          var txt = createGuiLabel(word, x, 24, [0.25, 1, 0.25, 1])
-          txt.text2D.scale = 0.75
-          lexiconLabels.push(txt)
+          guiLexicon.addWord(word, [0,1,0,1])
         })
       }
     })
@@ -1046,12 +1048,9 @@ function run (assets) {
 
   process.nextTick(function () {
     var x = 16
+    var player = world.queryTag('player')[0]
     player.player.lexicon.forEach(function (word) {
-      x += (word.length/2) * 12
-      var txt = createGuiLabel(word, x, 24, [1, 1, 1, 1])
-      txt.text2D.scale = 0.75
-      lexiconLabels.push(txt)
-      x += (word.length/2) * 12 + 8
+      guiLexicon.addWord(word)
     })
 
     notify('Welcome to DUNGEON TYPIST', function () {
@@ -1318,6 +1317,8 @@ function run (assets) {
       })
       drawParticles(commands)
     })
+
+    guiLexicon.draw(projectionScreen)
 
     // Draw inventory icons
     world.queryComponents([BillboardSprite, Sprite2D]).forEach(function (e) {
