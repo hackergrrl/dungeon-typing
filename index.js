@@ -1119,7 +1119,7 @@ function run (assets) {
 
   var drawBillboard = Billboard(regl)
 
-  function drawBillboard (e) {
+  function drawBillboardEntity (e) {
     var tex = textures[e.billboardSprite.texture]
     var at = vecify(e.physics.pos)
     var scale = e.billboardSprite.scale
@@ -1314,7 +1314,7 @@ function run (assets) {
     var bills = world.queryComponents([BillboardSprite, Physics])
     bills.sort(distCmp.bind(null, plr))
     bills.forEach(function (e) {
-      if (e.billboardSprite.visible) drawBillboard(e)
+      if (e.billboardSprite.visible) drawBillboardEntity(e)
     })
 
     // hp meter
