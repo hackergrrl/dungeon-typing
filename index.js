@@ -1236,6 +1236,11 @@ function run (assets) {
       var done = false
       world.queryComponents([Physics, TextHolder]).forEach(function (m) {
         if (done) return
+        if (m.textHolder.locked) {
+          e.remove()
+          done = true
+          return
+        }
         var dx = m.physics.pos.x - e.physics.pos.x
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
@@ -1247,6 +1252,9 @@ function run (assets) {
           var plr = world.queryTag('player')[0]
           var res = checkLexicon(plr, m, m.textHolder.text)
           if (res) {
+            if (typeof res === 'function') {
+              m.textHolder.locked = true
+            }
             setTimeout(function () {
               if (typeof res === 'function') {
                 var ok = res(plr, m)
@@ -1261,7 +1269,7 @@ function run (assets) {
               setTimeout(function () {
                 m.textHolder.setColor([1, 0, 0, 1])
                 m.textHolder.fadeOut()
-              }, 300)
+              }, 200)
             }
           }
         }
