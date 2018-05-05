@@ -8,7 +8,7 @@ var nano = require('nano-ecs')
 var vec3 = require('gl-vec3')
 var Billboard = require('./billboard')
 var Text = require('./text')
-var Particle = require('./particle')
+var ParticleSystem = require('./particle')
 var Meter = require('./meter')
 
 var screenWidth, screenHeight
@@ -1114,7 +1114,7 @@ function run (assets) {
 
   var drawSky = Sky(regl)
   var drawMeter = Meter(regl)
-  var drawParticles = ParticleEffect(regl)
+  var drawParticles = ParticleSystem(regl)
   var drawBillboard = Billboard(regl)
 
   function drawBillboardEntity (e) {
