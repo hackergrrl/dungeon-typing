@@ -448,7 +448,6 @@ function CameraController () {
 
 function ParticleEffect () {
   this.data = null
-  this.draw = Particle(regl)
   this.color = null
 
   this.init = function (opts) {
@@ -1113,9 +1112,10 @@ function run (assets) {
                         [0, 0.0, 0],
                         [0, 1, 0])
 
-  var sky = Sky(regl)
+  var drawSky = Sky(regl)
 
   var drawMeter = Meter(regl)
+  var drawParticles = ParticleEffect(regl)
 
   var drawBillboard = Billboard(regl)
 
@@ -1189,8 +1189,6 @@ function run (assets) {
     })
   }
 
-  var particle = Particle(regl)
-
   regl.frame(function (state) {
     tick = state.tick
     screenWidth = state.viewportWidth
@@ -1234,7 +1232,7 @@ function run (assets) {
     })
 
     // Draw sky bg
-    sky()
+    drawSky()
 
     // Draw voxel world
     map.draw({
@@ -1277,9 +1275,6 @@ function run (assets) {
         var dz = m.physics.pos.z - e.physics.pos.z
         var dist = Math.sqrt(dx*dx + dz*dz)
         if (dist < m.physics.width/2) {
-          //m.physics.vel.x += e.physics.vel.x * 0.01
-          //m.physics.vel.z += e.physics.vel.z * 0.01
-
           m.textHolder.add(e.text3D.text)
           e.remove()
           done = true
@@ -1365,7 +1360,7 @@ function run (assets) {
           color: e.particleEffect.color
         }
       })
-      e.particleEffect.draw(commands)
+      drawParticles(commands)
     })
 
     // Draw inventory icons
