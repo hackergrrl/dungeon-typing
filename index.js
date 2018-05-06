@@ -499,10 +499,25 @@ function Inventory (e) {
   this.pickup = function (i) {
     i.billboardSprite.visible = false
     i.item.owner = e
-    i.removeComponent(Physics)
+    i.physics.pos.x = Infinity
+    i.physics.pos.y = Infinity
+    i.physics.pos.z = Infinity
     this.contents.push(i)
     e.emit('pickup-item', i)
     return true
+  }
+
+  this.drop = function (i) {
+    i.billboardSprite.visible = true
+    i.item.owner = null
+    i.physics.pos.x = e.physics.pos.x
+    i.physics.pos.y = e.physics.pos.y
+    i.physics.pos.z = e.physics.pos.z
+    i.physics.vel.x = 0
+    i.physics.vel.y = 0
+    i.physics.vel.z = 0
+    e.emit('drop-item', i)
+    this.contents.splice(this.contents.indexOf(i), 1)
   }
 }
 
@@ -831,10 +846,17 @@ function createLevel (level) {
       notify('    Welcome to Level ' + player.level.level + '    ')
     })
     player.on('pickup-item', function (i) {
-      var idx = player.inventory.contents.length
-      var x = (idx - 1) * 88 + 26
-      var y = screenHeight - 32
       guiInventory.addItem(i.id, textures[i.billboardSprite.texture])
+    })
+    player.on('drop-item', function (i) {
+      if (inventorySelected === player.inventory.contents.indexOf(i)) {
+        i.item.lexicon.forEach(function (word) {
+          player.player.lexicon.splice(player.player.lexicon.indexOf(word), 1)
+          guiLexicon.removeWord(word)
+        })
+        inventorySelected = null
+      }
+      guiInventory.removeItem(i.id)
     })
     player.on('select-item', function (idx) {
       // deselect previous item
