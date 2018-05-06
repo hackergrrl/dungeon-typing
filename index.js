@@ -398,7 +398,7 @@ function BillboardSprite (e, tname, frameSize) {
   this.framesWide = (frameSize || [])[0] || 2
   this.framesTall = (frameSize || [])[1] || 1
   this.scale = 1
-  this.texture = tname
+  this.texture = textures[tname]
   this.visible = true
 }
 
@@ -922,7 +922,7 @@ function createLevel (level) {
       notify('    Welcome to Level ' + player.level.level + '    ')
     })
     player.on('pickup-item', function (i) {
-      guiInventory.addItem(i.id, textures[i.billboardSprite.texture])
+      guiInventory.addItem(i.id, i.billboardSprite.texture)
     })
     player.on('drop-item', function (i) {
       if (inventorySelected === player.inventory.contents.indexOf(i)) {
@@ -1182,7 +1182,7 @@ function run (assets) {
   var drawBillboard = Billboard(regl)
 
   function drawBillboardEntity (e) {
-    var tex = textures[e.billboardSprite.texture]
+    var tex = e.billboardSprite.texture
     var at = u.vecify(e.physics.pos)
     var scale = e.billboardSprite.scale
     var model = mat4.create()
@@ -1204,7 +1204,7 @@ function run (assets) {
   }
 
   function drawSprite (e, x, y) {
-    var tex = textures[e.billboardSprite.texture]
+    var tex = e.billboardSprite.texture
     var at = vec3.fromValues(x, y, -0.2)
     var scale = 25
     var model = mat4.create()
