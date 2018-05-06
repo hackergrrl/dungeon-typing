@@ -45,7 +45,7 @@ var lexicon = {
   'open':  openCommand,
   'close': closeCommand,
   'get': getCommand,
-  'throw': throwCommand,
+  'THROW': throwCommand,
 }
 
 var systems = [
@@ -141,7 +141,6 @@ function spawnParticleHit (at) {
 }
 
 function checkLexicon (plr, mob, text) {
-  text = text.toLowerCase()
   var words = plr.player.lexicon
 
   for (var j=0; j < words.length; j++) {
@@ -944,7 +943,7 @@ function createLevel (level) {
   apple.addComponent(PhysicsCone, 0.5)
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
-  apple.item.lexicon = ['throw']
+  apple.item.lexicon = ['THROW']
   apple.physics.height = 3
   apple.physics.friction = 0.9
   apple.physics.pos.x = player.physics.pos.x
@@ -959,7 +958,7 @@ function createLevel (level) {
   apple.addComponent(PhysicsCone, 0.5)
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
-  apple.item.lexicon = ['throw']
+  apple.item.lexicon = ['THROW']
   apple.physics.height = 3
   apple.physics.friction = 0.9
   apple.physics.pos.x = player.physics.pos.x
