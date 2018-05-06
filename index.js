@@ -57,6 +57,9 @@ var lexicon = {
 
   // Food
   'EAT':   eatCommand,
+
+  // Potions
+  'QUAFF': quaffCommand,
 }
 
 var systems = [
@@ -324,6 +327,18 @@ function eatCommand (user) {
   item.remove()
 }
 
+function quaffCommand (user) {
+  var item = user.inventory.contents[inventorySelected]
+  if (!item) return false
+  if (!item.potion) return false
+
+  user.inventory.drop(item)
+
+  user.health.heal(100, item)
+
+  item.remove()
+}
+
 function getObjectAt (x, y, z, radius) {
   var match
   world.queryComponents([Physics]).forEach(function (e) {
@@ -463,6 +478,9 @@ function Mana (e, max) {
 
 function Food () {
   this.healAmount = 10
+}
+
+function Potion () {
 }
 
 function Level (e) {
@@ -671,10 +689,20 @@ function loadResources (cb) {
     addSpriteToAtlas(atlas['food'], 'orange', 1, 2, 16, 16, 1)
     addSpriteToAtlas(atlas['food'], 'banana', 4, 2, 16, 16, 1)
     addSpriteToAtlas(atlas['food'], 'tomato', 5, 2, 16, 16, 1)
+
     atlas['door'] = { texture: texture['door.png'] }
     addSpriteToAtlas(atlas['door'], 'door', 0, 0, 16, 16, 2)
+
     atlas['foe'] = { texture: texture['foe.png'] }
     addSpriteToAtlas(atlas['foe'], 'foe', 0, 0, 16, 16, 2)
+
+    atlas['potion'] = { texture: texture['potions.png'] }
+    for (var i = 0; i < 24; i++) {
+      var x = i % 8
+      var y = Math.floor(i / 8)
+      addSpriteToAtlas(atlas['potion'], 'potion_' + i, x, y, 16, 16, 1)
+    }
+
     cb()
   }
 }
@@ -1036,6 +1064,26 @@ function createLevel (level) {
   player.physics.pos.y = 4
   camera.rot[1] = -Math.PI
 
+  function createPotion (x, y, z) {
+    var potion = world.createEntity()
+    var id = Math.floor(Math.random() * 24)
+    potion.addComponent(BillboardSprite, sprite('potion/potion_' + id), [1,1])
+    potion.billboardSprite.scale = 0.5
+    potion.addComponent(Physics, 5)
+    potion.addComponent(Item)
+    potion.addComponent(PhysicsCone, 0.5)
+    potion.addComponent(Identity, 'potion')
+    potion.addComponent(TextHolder)
+    potion.addComponent(Potion)
+    potion.item.lexicon = ['THROW', 'QUAFF']
+    potion.physics.height = 3
+    potion.physics.friction = 0.9
+    potion.physics.pos.x = x
+    potion.physics.pos.y = y
+    potion.physics.pos.z = z
+    return potion
+  }
+
   function createApple (x, y, z) {
     var apple = world.createEntity()
     apple.addComponent(BillboardSprite, sprite('food/apple'), [1,1])
@@ -1057,10 +1105,10 @@ function createLevel (level) {
 
   createApple(player.physics.pos.x,
               player.physics.pos.y + 2,
-              player.physics.pos.z - 2)
-  createApple(player.physics.pos.x + 1,
-              player.physics.pos.y + 2,
-              player.physics.pos.z - 2)
+              player.physics.pos.z + 2)
+  createPotion(player.physics.pos.x + 1,
+               player.physics.pos.y + 2,
+               player.physics.pos.z + 2)
 
   while (true) {
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
