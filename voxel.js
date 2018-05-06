@@ -216,7 +216,7 @@ Voxel.prototype.generateGeometry = function () {
 
 Voxel.prototype.draw = function (opts) {
   if (!opts) opts = {}
-  opts.texture = this.atlasTexture.texture,
+  opts.texture = this.atlasTexture.data,
   opts.elements = this.elements,
   opts.positions = this.position,
   opts.uvs = this.uv,

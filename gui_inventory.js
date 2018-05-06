@@ -101,7 +101,7 @@ GuiInventory.prototype.draw = function (projectionScreen, screenHeight) {
       framesTall: 1 / framesTall,
       frameX: frameX / framesWide,
       frameY: frameY / framesTall,
-      texture: tex.texture
+      texture: tex.data
     })
   })
 }

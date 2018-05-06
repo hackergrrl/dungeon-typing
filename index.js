@@ -393,7 +393,6 @@ function Sprite2D (e, x, y) {
 }
 
 function BillboardSprite (e, tname, frameSize) {
-  this.texture = null
   this.frameX = 0
   this.frameY = 0
   this.framesWide = (frameSize || [])[0] || 2
@@ -615,7 +614,7 @@ function tex (fn) {
       textures[fn] = {
         width: data.width,
         height: data.height,
-        texture: tex
+        data: tex
       }
       return tex
     }
@@ -1200,7 +1199,7 @@ function run (assets) {
       frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
       view: view,
       projection: projectionWorld,
-      texture: tex.texture
+      texture: tex.data
     })
   }
 
@@ -1220,7 +1219,7 @@ function run (assets) {
       framesTall: 1 / e.billboardSprite.framesTall,
       frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
       frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
-      texture: tex.texture
+      texture: tex.data
     })
   }
 
