@@ -42,6 +42,7 @@ var map
 var lexicon = {
   // Combat
   'hit':   hitCommand.bind(null, '2d3+0'),
+  'bash':  bashCommand.bind(null, '1d3+0'),
 
   // Doors
   'open':  openCommand,
@@ -179,37 +180,61 @@ function slamCommand (dice, attacker, target) {
   }
 }
 
-function hitCommand (dice, attacker, target) {
-  var dmg = u.rollDice(dice)
+function melee (opts) {
+  // opts.dice, opts.attacker, opts.target, opts.pushback, opts.distance, opts.lunge
+
+  var dmg = u.rollDice(opts.dice)
 
   var player = world.queryTag('player')[0]
   var mult = 1
-  if (attacker !== player) mult = -0.5
+  if (opts.attacker !== player) mult = -0.5
 
-  if (!target.health && target.physics) {
-    target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
-    target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
-    return true
-  }
-
-  var dist = u.physicsDistance(attacker, target)
-  if (dist <= 4) {
-    camera.shakeVel[0] = Math.sin(camera.rot[1]) * 0.5 * mult
+  var dist = u.physicsDistance(opts.attacker, opts.target)
+  if (dist <= opts.distance) {
+    // camera lunge
+    camera.shakeVel[0] = Math.sin(camera.rot[1]) * opts.lunge * mult
     camera.shakeVel[1] = 0
-    camera.shakeVel[2] = -Math.cos(camera.rot[1]) * 0.5 * mult
+    camera.shakeVel[2] = -Math.cos(camera.rot[1]) * opts.lunge * mult
 
-    target.physics.vel.x += Math.sin(camera.rot[1]) * 0.1 * mult
-    target.physics.vel.z += -Math.cos(camera.rot[1]) * 0.1 * mult
-    if (mult === 1) {
-      spawnParticleStrike(u.vecify(target.physics.pos))
-    } else {
-      spawnParticleBlood(u.vecify(target.physics.pos))
+    // pushback
+    opts.target.physics.vel.x += Math.sin(camera.rot[1]) * opts.pushback * mult
+    opts.target.physics.vel.z += -Math.cos(camera.rot[1]) * opts.pushback * mult
+
+    // damage + effect
+    if (opts.target.health) {
+      if (mult === 1) {
+        spawnParticleStrike(u.vecify(opts.target.physics.pos))
+      } else {
+        spawnParticleBlood(u.vecify(opts.target.physics.pos))
+      }
+      opts.target.health.damage(dmg, opts.attacker)
     }
-    target.health.damage(dmg, attacker)
     return true
   } else {
     return false
   }
+}
+
+function hitCommand (dice, attacker, target) {
+  melee({
+    dice: dice,
+    attacker: attacker,
+    target: target,
+    lunge: 0.5,
+    pushback: 0.1,
+    distance: 4
+  })
+}
+
+function bashCommand (dice, attacker, target) {
+  melee({
+    dice: dice,
+    attacker: attacker,
+    target: target,
+    lunge: 1.0,
+    pushback: 0.6,
+    distance: 4
+  })
 }
 
 function openCommand (user, target) {
@@ -326,7 +351,7 @@ function Player (e) {
     }
   }
 
-  this.lexicon = ['hit', 'open', 'close', 'get']
+  this.lexicon = ['hit', 'open', 'close', 'get', 'bash']
 }
 
 function Door () {
