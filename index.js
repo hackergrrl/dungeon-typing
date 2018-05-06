@@ -66,11 +66,11 @@ var systems = [
   updateParticles,
 ]
 
-function addSpriteToAtlas (atlas, name, px, py, frameWidth, frameHeight, framesAcross) {
-  var bu = px / atlas.texture.width
-  var bv = py / atlas.texture.height
-  var um = frameWidth / atlas.texture.width
-  var vm = frameHeight / atlas.texture.height
+function addSpriteToAtlas (atlas, name, fx, fy, frameWidth, frameHeight, framesAcross) {
+  var um = (frameWidth / atlas.texture.width)
+  var vm = (frameHeight / atlas.texture.height)
+  var bu = um * fx
+  var bv = vm * fy
   atlas[name] = { texture: atlas.texture }
   atlas[name].uvs = (new Array(framesAcross))
     .fill(0)
@@ -660,15 +660,17 @@ function loadResources (cb) {
       chest: tex('chest.png'),
       potions: tex('potions.png'),
       door: tex('door.png'),
-      food: tex('food.png'),
-      apple: tex('apple.png')
+      food: tex('food.png')
     },
     onDone: done
   })
 
   function done () {
-    atlas['food'] = { texture: texture['apple.png'] }
-    addSpriteToAtlas(atlas['food'], 'apple', 0, 0, 16, 16, 1)
+    atlas['food'] = { texture: texture['food.png'] }
+    addSpriteToAtlas(atlas['food'], 'apple',  0, 2, 16, 16, 1)
+    addSpriteToAtlas(atlas['food'], 'orange', 1, 2, 16, 16, 1)
+    addSpriteToAtlas(atlas['food'], 'banana', 4, 2, 16, 16, 1)
+    addSpriteToAtlas(atlas['food'], 'tomato', 5, 2, 16, 16, 1)
     atlas['door'] = { texture: texture['door.png'] }
     addSpriteToAtlas(atlas['door'], 'door', 0, 0, 16, 16, 2)
     atlas['foe'] = { texture: texture['foe.png'] }
