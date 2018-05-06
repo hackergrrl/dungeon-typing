@@ -14,9 +14,11 @@ var u = require('./utils')
 var GuiLexicon = require('./gui_lexicon')
 var GuiInventory = require('./gui_inventory')
 
+var texture = {}
+var atlas = {}
+
 var screenWidth, screenHeight
 var tick = 0
-var textures = {}
 var currentLevel = 1
 var camera = {
   pos: [0, -2, -10],
@@ -63,6 +65,29 @@ var systems = [
   updateMobAI,
   updateParticles,
 ]
+
+function addSpriteToAtlas (atlas, name, px, py, frameWidth, frameHeight, framesAcross) {
+  var bu = px / atlas.texture.width
+  var bv = py / atlas.texture.height
+  var um = frameWidth / atlas.texture.width
+  var vm = frameHeight / atlas.texture.height
+  atlas[name] = { texture: atlas.texture }
+  atlas[name].uvs = (new Array(framesAcross))
+    .fill(0)
+    .map(function (_, n) {
+      var u = bu + um * n
+      var v = bv
+      return [
+        [ u,      v      ],
+        [ u + um, v      ],
+        [ u + um, v + vm ],
+
+        [ u,      v      ],
+        [ u + um, v + vm ],
+        [ u,      v + vm ]
+      ]
+    })
+}
 
 function canSee (a, b) {
   var x = a.physics.pos.x
@@ -392,13 +417,13 @@ function Sprite2D (e, x, y) {
   this.y = y
 }
 
-function BillboardSprite (e, tname, frameSize) {
+function BillboardSprite (e, sprite, frameSize) {
   this.frameX = 0
   this.frameY = 0
   this.framesWide = (frameSize || [])[0] || 2
   this.framesTall = (frameSize || [])[1] || 1
   this.scale = 1
-  this.texture = textures[tname]
+  this.sprite = sprite
   this.visible = true
 }
 
@@ -611,7 +636,7 @@ function tex (fn) {
         min: 'nearest',
         mag: 'nearest'
       })
-      textures[fn] = {
+      texture[fn] = {
         width: data.width,
         height: data.height,
         data: tex
@@ -621,18 +646,38 @@ function tex (fn) {
   }
 }
 
-require('resl')({
-  manifest: {
-    atlas: tex('atlas.png'),
-    foe: tex('foe.png'),
-    chest: tex('chest.png'),
-    potions: tex('potions.png'),
-    door: tex('door.png'),
-    food: tex('food.png'),
-    apple: tex('apple.png')
-  },
-  onDone: run
-})
+function sprite (name) {
+  var textureName = name.split('/')[0]
+  var spriteName = name.split('/')[1]
+  return atlas[textureName][spriteName]
+}
+
+function loadResources (cb) {
+  require('resl')({
+    manifest: {
+      atlas: tex('atlas.png'),
+      foe: tex('foe.png'),
+      chest: tex('chest.png'),
+      potions: tex('potions.png'),
+      door: tex('door.png'),
+      food: tex('food.png'),
+      apple: tex('apple.png')
+    },
+    onDone: done
+  })
+
+  function done () {
+    atlas['food'] = { texture: texture['apple.png'] }
+    addSpriteToAtlas(atlas['food'], 'apple', 0, 0, 16, 16, 1)
+    atlas['door'] = { texture: texture['door.png'] }
+    addSpriteToAtlas(atlas['door'], 'door', 0, 0, 16, 16, 2)
+    atlas['foe'] = { texture: texture['foe.png'] }
+    addSpriteToAtlas(atlas['foe'], 'foe', 0, 0, 16, 16, 2)
+    cb()
+  }
+}
+
+loadResources(run)
 
 document.body.onkeypress = function (ev) {
   var plr = world.queryTag('player')[0]
@@ -922,7 +967,7 @@ function createLevel (level) {
       notify('    Welcome to Level ' + player.level.level + '    ')
     })
     player.on('pickup-item', function (i) {
-      guiInventory.addItem(i.id, i.billboardSprite.texture)
+      guiInventory.addItem(i.id, i.billboardSprite.sprite)
     })
     player.on('drop-item', function (i) {
       if (inventorySelected === player.inventory.contents.indexOf(i)) {
@@ -961,7 +1006,7 @@ function createLevel (level) {
   }
 
   // alloc + config map
-  map = new Voxel(regl, 50, 10, 50, textures['atlas.png'], 16, 16)
+  map = new Voxel(regl, 50, 10, 50, texture['atlas.png'], 16, 16)
   var v = level
   var roof = (level - 1) % 2
   var floor = (level - 1) % 8
@@ -991,7 +1036,7 @@ function createLevel (level) {
 
   function createApple (x, y, z) {
     var apple = world.createEntity()
-    apple.addComponent(BillboardSprite, 'apple.png', [1,1])
+    apple.addComponent(BillboardSprite, sprite('food/apple'), [1,1])
     apple.billboardSprite.scale = 0.5
     apple.addComponent(Physics, 5)
     apple.addComponent(Item)
@@ -1047,7 +1092,7 @@ function createLevel (level) {
       var z = (room.position[1] + (Math.random() * (room.room_size[1]-1)) + 1) * 4
       var foe = world.createEntity()
       foe.addComponent(Physics, 30)
-      foe.addComponent(BillboardSprite, 'foe.png')
+      foe.addComponent(BillboardSprite, sprite('foe/foe'))
       foe.addComponent(MobAI)
       foe.addComponent(PhysicsCone, 1.5)
       foe.addComponent(TextHolder)
@@ -1068,7 +1113,7 @@ function createLevel (level) {
       door.addComponent(Door)
       door.addComponent(PhysicsCone, 2)
       door.door.rot = rot
-      door.addComponent(BillboardSprite, 'door.png')
+      door.addComponent(BillboardSprite, sprite('door/door'))
       door.addComponent(TextHolder)
       door.addComponent(Health, 50)
       door.billboardSprite.scale = 2
@@ -1182,7 +1227,8 @@ function run (assets) {
   var drawBillboard = Billboard(regl)
 
   function drawBillboardEntity (e) {
-    var tex = e.billboardSprite.texture
+    if (!e.billboardSprite.sprite) return
+    if (!e.billboardSprite.sprite.texture) return
     var at = u.vecify(e.physics.pos)
     var scale = e.billboardSprite.scale
     var model = mat4.create()
@@ -1193,18 +1239,16 @@ function run (assets) {
     mat4.rotateY(model, model, rot)
     drawBillboard({
       model: model,
-      framesWide: 1 / e.billboardSprite.framesWide,
-      framesTall: 1 / e.billboardSprite.framesTall,
-      frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
-      frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
       view: view,
       projection: projectionWorld,
-      texture: tex.data
+      texture: e.billboardSprite.sprite.texture.data,
+      uvs: e.billboardSprite.sprite.uvs[e.billboardSprite.frameX]
     })
   }
 
   function drawSprite (e, x, y) {
-    var tex = e.billboardSprite.texture
+    if (!e.billboardSprite.sprite) return
+    if (!e.billboardSprite.sprite.texture) return
     var at = vec3.fromValues(x, y, -0.2)
     var scale = 25
     var model = mat4.create()
@@ -1215,11 +1259,8 @@ function run (assets) {
       model: model,
       view: mat4.create(),
       projection: projectionScreen,
-      framesWide: 1 / e.billboardSprite.framesWide,
-      framesTall: 1 / e.billboardSprite.framesTall,
-      frameX: e.billboardSprite.frameX / e.billboardSprite.framesWide,
-      frameY: e.billboardSprite.frameY / e.billboardSprite.framesTall,
-      texture: tex.data
+      texture: e.billboardSprite.sprite.texture.data,
+      uvs: e.billboardSprite.sprite.uvs[e.billboardSprite.frameX]
     })
   }
 

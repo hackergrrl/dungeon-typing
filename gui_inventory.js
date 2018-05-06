@@ -14,10 +14,10 @@ function GuiInventory (regl) {
   this.drawBillboard = Billboard(regl)
 }
 
-GuiInventory.prototype.addItem = function (id, texture) {
+GuiInventory.prototype.addItem = function (id, sprite) {
   this.items.push({
     id: id,
-    texture: texture,
+    sprite: sprite,
     color: [1,1,1,1],
     x: 0,
     y: 0
@@ -69,7 +69,6 @@ GuiInventory.prototype.draw = function (projectionScreen, screenHeight) {
   var view = mat4.create()
   var self = this
   this.items.forEach(function (item) {
-    var tex = item.texture
     var at = vec3.fromValues(item.x, item.y + (screenHeight - 32), -0.2)
     var scale = 25
     var model = mat4.create()
@@ -89,19 +88,12 @@ GuiInventory.prototype.draw = function (projectionScreen, screenHeight) {
     mat4.identity(model)
     mat4.translate(model, model, at)
     mat4.scale(model, model, vec3.fromValues(scale, -scale, scale))
-    var framesWide = 1
-    var framesTall = 1
-    var frameX = 0
-    var frameY = 0
     self.drawBillboard({
       model: model,
       view: view,
       projection: projectionScreen,
-      framesWide: 1 / framesWide,
-      framesTall: 1 / framesTall,
-      frameX: frameX / framesWide,
-      frameY: frameY / framesTall,
-      texture: tex.data
+      texture: item.sprite.texture.data,
+      uvs: item.sprite.uvs[0]
     })
   })
 }
