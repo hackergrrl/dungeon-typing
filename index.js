@@ -462,6 +462,7 @@ function TextHolder () {
   this.draw = undefined
   this.text = ''
   this.alpha = 1.0
+  this.scale = 1.0
   this.add = function (letter) {
     this.text += letter
     this.draw = Text(regl, this.text)
@@ -839,6 +840,7 @@ function createLevel (level) {
 
   if (!player) {
     player = world.createEntity()
+    player.addComponent(TextHolder)
     player.addComponent(Player)
     player.addComponent(Physics, 50)
     player.addComponent(PhysicsCone, 1.5)
@@ -848,6 +850,7 @@ function createLevel (level) {
     player.addComponent(Inventory)
     player.addComponent(Level)
     player.addTag('player')
+    player.textHolder.scale = 0.2
     player.on('death', function () {
       player.physics.height = 0.5
       player.physics.vel.y = 1
@@ -1183,11 +1186,12 @@ function run (assets) {
     })
   }
 
-  function drawText (text, x, y, z) {
+  function drawText (text, x, y, z, scale) {
+    scale = scale || 1
     var model = mat4.create()
     mat4.identity(model)
     mat4.translate(model, model, vec3.fromValues(x, y, z))
-    mat4.scale(model, model, vec3.fromValues(1, -1, 1))
+    mat4.scale(model, model, vec3.fromValues(scale, -scale, scale))
     var rot = -Math.atan2(-camera.pos[2] - z, -camera.pos[0] - x) + Math.PI/2
     mat4.rotateY(model, model, rot)
     text({
@@ -1259,7 +1263,14 @@ function run (assets) {
     // Draw text over targets
     world.queryComponents([Physics, TextHolder]).forEach(function (e) {
       if (e.textHolder.draw) {
-        drawText(e.textHolder.draw, e.physics.pos.x, e.physics.pos.y + 1.5, e.physics.pos.z)
+        if (e.player) {
+          var x = e.physics.pos.x + Math.sin(camera.rot[1]) * 1.5
+          var y = e.physics.pos.y + 0.6
+          var z = e.physics.pos.z - Math.cos(camera.rot[1]) * 1.5
+          drawText(e.textHolder.draw, x, y, z, e.textHolder.scale)
+        } else {
+          drawText(e.textHolder.draw, e.physics.pos.x, e.physics.pos.y + 1.5, e.physics.pos.z, e.textHolder.scale)
+        }
       }
       e.textHolder.update()
       if (e.textHolder.alpha <= 0) {
@@ -1282,6 +1293,7 @@ function run (assets) {
       var done = false
       world.queryComponents([Physics, TextHolder]).forEach(function (m) {
         if (done) return
+        if (m.player && !/[A-Z]/.test(e.text3D.text[0])) return
         if (m.textHolder.locked) {
           e.remove()
           done = true
