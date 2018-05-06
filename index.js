@@ -213,7 +213,7 @@ function openCommand (user, target) {
   target.physics.pos.x += Math.sin(target.door.rot - Math.PI/2) * 1.5
   target.physics.pos.z -= Math.cos(target.door.rot - Math.PI/2) * 1.5
   target.door.open = true
-  target.physicsCone.radius = 0.5
+  target.physicsCone.radius = 0.1
   return true
 }
 
@@ -239,18 +239,20 @@ function throwCommand (user, target) {
   var item = user.inventory.contents[inventorySelected]
   if (!item) return false
 
-  // item.addComponent(Physics)
-  // var yrot = camera.rot[1]
-  // item.physics.pos.x = user.physics.pos.x + Math.sin(yrot)
-  // item.physics.pos.z = user.physics.pos.z - Math.cos(yrot)
-  // item.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.3
-  // item.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.3
-  // item.physics.pos.y = 3
-  // item.physics.vel.x = user.physics.vel.x + Math.sin(yrot) * 0.8
-  // item.physics.vel.z = user.physics.vel.z - Math.cos(yrot) * 0.8
-  // item.physics.vel.y = user.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
-  // item.billboardSprite.visible = true
-  return false
+  user.inventory.drop(item)
+
+  var yrot = camera.rot[1]
+  var spawnDist = user.physicsCone.radius + item.physicsCone.radius
+  item.physics.pos.x = user.physics.pos.x + Math.sin(yrot) * spawnDist
+  item.physics.pos.z = user.physics.pos.z - Math.cos(yrot) * spawnDist
+  item.physics.pos.x += Math.sin(yrot + Math.PI/2) * 0.3
+  item.physics.pos.z -= Math.cos(yrot + Math.PI/2) * 0.3
+  item.physics.pos.y = 3
+  item.physics.vel.x = user.physics.vel.x + Math.sin(yrot) * 0.8
+  item.physics.vel.z = user.physics.vel.z - Math.cos(yrot) * 0.8
+  item.physics.vel.y = user.physics.vel.y - Math.sin(camera.rot[0]) * 0.8 + 0.1
+
+  return true
 }
 
 function getObjectAt (x, y, z, radius) {
@@ -265,7 +267,7 @@ function getObjectAt (x, y, z, radius) {
 }
 
 // gravity-affected, bounding box vs tilemap, position
-function Physics () {
+function Physics (e, mass) {
   this.movable = true
   this.pos = {
     x: 0,
@@ -278,6 +280,8 @@ function Physics () {
 
   this.gravity = 1
   this.friction = 0.94
+
+  this.mass = mass || 1
 
   this.vel = {
     x: 0,
@@ -700,13 +704,29 @@ function updatePhysics (world) {
           }
         }
 
-        var toTarget = vec3.sub(vec3.create(), u.vecify(e.physics.pos), u.vecify(d.physics.pos))
-        if (vec3.length(toTarget) <= d.physicsCone.radius) {
+        if (vec3.length(toTarget) <= d.physicsCone.radius + e.physicsCone.radius) {
+          var eVel = u.vecify(e.physics.vel)
+          var dVel = u.vecify(d.physics.vel)
+          vec3.scale(eVel, eVel, e.physics.mass)
+          vec3.scale(dVel, dVel, d.physics.mass)
+          var resVel = vec3.create()
+          vec3.add(resVel, eVel, dVel)
+          // d.physics.vel.x += resVel[0] / d.physics.mass
+          // d.physics.vel.z += resVel[0] / d.physics.mass
+          // e.physics.vel.x += -resVel[0] / e.physics.mass
+          // e.physics.vel.z += -resVel[0] / e.physics.mass
+
+          var eMomentum = vec3.length(eVel) * e.physics.mass
+          var dMomentum = vec3.length(dVel) * d.physics.mass
+          var res = vec3.length(resVel) / e.physics.mass
+
           vec3.normalize(toTarget, toTarget)
-          vec3.scale(toTarget, toTarget, 0.01)
-          e.physics.vel.x += toTarget[0]
-          e.physics.vel.y += toTarget[1]
-          e.physics.vel.z += toTarget[2]
+          // var massDiff = d.physics.mass / e.physics.mass
+          // vec3.scale(toTarget, toTarget, 0.003 * massDiff)
+          var dot = (1 - vec3.dot(toTarget, eVel)) * 0.5
+          vec3.scale(toTarget, toTarget, 0.5 * res)
+          e.physics.vel.x += toTarget[0] * dot
+          e.physics.vel.z += toTarget[2] * dot
         }
       })
     }
@@ -820,8 +840,8 @@ function createLevel (level) {
   if (!player) {
     player = world.createEntity()
     player.addComponent(Player)
-    player.addComponent(Physics)
-    player.addComponent(PhysicsCone, 2)
+    player.addComponent(Physics, 50)
+    player.addComponent(PhysicsCone, 1.5)
     player.addComponent(CameraController)
     player.addComponent(Health, 30)
     player.addComponent(Mana, 12)
@@ -916,12 +936,14 @@ function createLevel (level) {
   var apple = world.createEntity()
   apple.addComponent(BillboardSprite, 'apple.png', [1,1])
   apple.billboardSprite.scale = 0.5
-  apple.addComponent(Physics)
+  apple.addComponent(Physics, 5)
   apple.addComponent(Item)
+  apple.addComponent(PhysicsCone, 0.5)
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
   apple.item.lexicon = ['throw']
   apple.physics.height = 3
+  apple.physics.friction = 0.9
   apple.physics.pos.x = player.physics.pos.x
   apple.physics.pos.y = player.physics.pos.y + 2
   apple.physics.pos.z = player.physics.pos.z - 2
@@ -929,12 +951,14 @@ function createLevel (level) {
   var apple = world.createEntity()
   apple.addComponent(BillboardSprite, 'apple.png', [1,1])
   apple.billboardSprite.scale = 0.5
-  apple.addComponent(Physics)
+  apple.addComponent(Physics, 5)
   apple.addComponent(Item)
+  apple.addComponent(PhysicsCone, 0.5)
   apple.addComponent(Identity, 'apple')
   apple.addComponent(TextHolder)
-  apple.item.lexicon = ['omnom']
+  apple.item.lexicon = ['throw']
   apple.physics.height = 3
+  apple.physics.friction = 0.9
   apple.physics.pos.x = player.physics.pos.x
   apple.physics.pos.y = player.physics.pos.y + 2
   apple.physics.pos.z = player.physics.pos.z + 2
@@ -970,10 +994,10 @@ function createLevel (level) {
       var x = (room.position[0] + (Math.random() * (room.room_size[0]-1)) + 1) * 4
       var z = (room.position[1] + (Math.random() * (room.room_size[1]-1)) + 1) * 4
       var foe = world.createEntity()
-      foe.addComponent(Physics)
+      foe.addComponent(Physics, 30)
       foe.addComponent(BillboardSprite, 'foe.png')
       foe.addComponent(MobAI)
-      foe.addComponent(PhysicsCone, 2)
+      foe.addComponent(PhysicsCone, 1.5)
       foe.addComponent(TextHolder)
       foe.addComponent(Health, 6)
       foe.mobAI.xp = 8
@@ -988,9 +1012,9 @@ function createLevel (level) {
       var x = (room.position[0] + exit[0][0]) * 4 + 1
       var z = (room.position[1] + exit[0][1]) * 4 + 1
       var door = world.createEntity()
-      door.addComponent(Physics)
+      door.addComponent(Physics, 1000)
       door.addComponent(Door)
-      door.addComponent(PhysicsCone)
+      door.addComponent(PhysicsCone, 2)
       door.door.rot = rot
       door.addComponent(BillboardSprite, 'door.png')
       door.addComponent(TextHolder)
