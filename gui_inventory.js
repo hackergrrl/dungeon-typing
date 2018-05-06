@@ -45,16 +45,18 @@ GuiInventory.prototype.selectItem = function (num) {
 GuiInventory.prototype.rebuild = function () {
   for (var i=0; i < this.items.length; i++) {
     var item = this.items[i]
-    item.drawLabel = Text(this.regl, String(i+1), item.color)
+    var selected = (this.selected === i)
+    item.drawLabel = Text(this.regl, String(i+1), selected ? [0,1,0,1] : [1,1,1,1])
     item.x = i * 79 + 24
-    item.y = 0
+    item.y = selected ? -8 : 0
   }
 }
 
 GuiInventory.prototype.removeItem = function (id) {
-  for (var i=0; i < this.labels.length; i++) {
+  for (var i=0; i < this.items.length; i++) {
     if (this.items[i].id === id) {
       this.items.splice(i, 1)
+      if (this.selected === i) this.selected = null
       this.rebuild()
       return true
     }
