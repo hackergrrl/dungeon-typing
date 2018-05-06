@@ -40,12 +40,20 @@ var world
 var map
 
 var lexicon = {
+  // Combat
   'hit':   hitCommand.bind(null, '2d3+0'),
-  'slam':  slamCommand.bind(null, '1d5+2'),
+
+  // Doors
   'open':  openCommand,
   'close': closeCommand,
-  'get': getCommand,
+  'slam':  slamCommand.bind(null, '1d5+2'),
+
+  // Items
+  'get':   getCommand,
   'THROW': throwCommand,
+
+  // Food
+  'EAT':   eatCommand,
 }
 
 var systems = [
@@ -254,6 +262,18 @@ function throwCommand (user, target) {
   return true
 }
 
+function eatCommand (user) {
+  var item = user.inventory.contents[inventorySelected]
+  if (!item) return false
+  if (!item.food) return false
+
+  user.inventory.drop(item)
+
+  user.health.heal(item.food.healAmount, item)
+
+  item.remove()
+}
+
 function getObjectAt (x, y, z, radius) {
   var match
   world.queryComponents([Physics]).forEach(function (e) {
@@ -372,6 +392,12 @@ function Health (e, max) {
       e.emit('death', attacker)
     }
   }
+
+  this.heal = function (num, via) {
+    var toAdd = Math.min(num, this.max - this.amount)
+    this.amount += toAdd
+    e.emit('heal', toAdd, via)
+  }
 }
 
 function Mana (e, max) {
@@ -384,6 +410,10 @@ function Mana (e, max) {
     this.amount -= num
     return true
   }
+}
+
+function Food () {
+  this.healAmount = 10
 }
 
 function Level (e) {
@@ -935,35 +965,31 @@ function createLevel (level) {
   player.physics.pos.y = 4
   camera.rot[1] = -Math.PI
 
-  var apple = world.createEntity()
-  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
-  apple.billboardSprite.scale = 0.5
-  apple.addComponent(Physics, 5)
-  apple.addComponent(Item)
-  apple.addComponent(PhysicsCone, 0.5)
-  apple.addComponent(Identity, 'apple')
-  apple.addComponent(TextHolder)
-  apple.item.lexicon = ['THROW']
-  apple.physics.height = 3
-  apple.physics.friction = 0.9
-  apple.physics.pos.x = player.physics.pos.x
-  apple.physics.pos.y = player.physics.pos.y + 2
-  apple.physics.pos.z = player.physics.pos.z - 2
+  function createApple (x, y, z) {
+    var apple = world.createEntity()
+    apple.addComponent(BillboardSprite, 'apple.png', [1,1])
+    apple.billboardSprite.scale = 0.5
+    apple.addComponent(Physics, 5)
+    apple.addComponent(Item)
+    apple.addComponent(PhysicsCone, 0.5)
+    apple.addComponent(Identity, 'apple')
+    apple.addComponent(TextHolder)
+    apple.addComponent(Food, 5)
+    apple.item.lexicon = ['THROW', 'EAT']
+    apple.physics.height = 3
+    apple.physics.friction = 0.9
+    apple.physics.pos.x = x
+    apple.physics.pos.y = y
+    apple.physics.pos.z = z
+    return apple
+  }
 
-  var apple = world.createEntity()
-  apple.addComponent(BillboardSprite, 'apple.png', [1,1])
-  apple.billboardSprite.scale = 0.5
-  apple.addComponent(Physics, 5)
-  apple.addComponent(Item)
-  apple.addComponent(PhysicsCone, 0.5)
-  apple.addComponent(Identity, 'apple')
-  apple.addComponent(TextHolder)
-  apple.item.lexicon = ['THROW']
-  apple.physics.height = 3
-  apple.physics.friction = 0.9
-  apple.physics.pos.x = player.physics.pos.x
-  apple.physics.pos.y = player.physics.pos.y + 2
-  apple.physics.pos.z = player.physics.pos.z + 2
+  createApple(player.physics.pos.x,
+              player.physics.pos.y + 2,
+              player.physics.pos.z - 2)
+  createApple(player.physics.pos.x + 1,
+              player.physics.pos.y + 2,
+              player.physics.pos.z - 2)
 
   while (true) {
     var room = dun.children[Math.floor(Math.random() * dun.children.length)]
